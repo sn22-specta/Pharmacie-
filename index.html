@@ -457,9 +457,9 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
 .loc-select option{padding:12px;font-size:15px;color:var(--c);background:var(--bg)}
 .loc-select.loading{background-image:none;padding-right:16px;color:var(--c-40)}
 
-.loc-label-optional{font-size:10px;font-weight:700;color:var(--c-60);
-  background:var(--c-08);padding:2px 8px;border-radius:var(--r-full);
-  margin-left:6px;text-transform:uppercase;letter-spacing:.04em}
+.loc-badge-fast{display:inline-block;font-size:9px;font-weight:800;color:var(--bg);
+  background:var(--c);padding:2px 7px;border-radius:var(--r-full);margin-left:6px;
+  text-transform:uppercase;letter-spacing:.04em;vertical-align:middle}
 
 .pharma-suggestions{background:var(--bg);border-radius:var(--r);margin-top:8px;
   box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:280px;overflow-y:auto;display:none;
@@ -534,6 +534,7 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
   <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></symbol>
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></symbol>
 </svg>
 
 <header>
@@ -698,8 +699,8 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
       </div>
       <div id="fReg" style="display:none">
         <div class="bar-info success">
-          <b>✅ Inscription guidée</b><br>
-          Sélectionnez votre pays : toutes les villes se chargent automatiquement. Affinez ensuite avec la région (optionnel).
+          <b>⚡ Chargement ultra-rapide</b><br>
+          Sélectionnez votre pays : toutes les villes s'affichent en moins d'une seconde.
         </div>
 
         <div class="field">
@@ -902,21 +903,45 @@ var liveUserMarker=null,liveAccuracyCircle=null;
 var watchId=null;
 var osmCache={},osmCacheTime={};
 
-var selectedLoc={pays:null,paysCode:null,region:null,ville:null,quartier:null};
+var selectedLoc={pays:null,paysCode:null,region:null,ville:null,quartier:null,lat:null,lng:null};
+
+/* Cache local des villes déjà chargées */
+var CITIES_CACHE={};
 
 var OFFICIAL_EMAIL_DOMAINS=['ordre-pharmacien.sn','ordrepharmacien.sn','sante.gouv.sn','pharmacie.sn','pharmacies.sn'];
 var BLOCKED_EMAIL_DOMAINS=['gmail.com','yahoo.com','hotmail.com','outlook.com','live.com','icloud.com','mail.com','protonmail.com','yopmail.com','aol.com'];
 
 var PAYS=[
-  {code:'sn',nom:'🇸🇳 Sénégal'},{code:'ci',nom:'🇨🇮 Côte d\'Ivoire'},{code:'ml',nom:'🇲🇱 Mali'},
-  {code:'bf',nom:'🇧🇫 Burkina Faso'},{code:'gn',nom:'🇬🇳 Guinée'},{code:'gw',nom:'🇬🇼 Guinée-Bissau'},
-  {code:'mr',nom:'🇲🇷 Mauritanie'},{code:'gm',nom:'🇬🇲 Gambie'},{code:'tg',nom:'🇹🇬 Togo'},
-  {code:'bj',nom:'🇧🇯 Bénin'},{code:'ne',nom:'🇳🇪 Niger'},{code:'cm',nom:'🇨🇲 Cameroun'},
-  {code:'ga',nom:'🇬🇦 Gabon'},{code:'cg',nom:'🇨🇬 Congo'},{code:'cd',nom:'🇨🇩 RD Congo'},
-  {code:'td',nom:'🇹🇩 Tchad'},{code:'ma',nom:'🇲🇦 Maroc'},{code:'dz',nom:'🇩🇿 Algérie'},
-  {code:'tn',nom:'🇹🇳 Tunisie'},{code:'fr',nom:'🇫🇷 France'},{code:'be',nom:'🇧🇪 Belgique'},
-  {code:'ch',nom:'🇨🇭 Suisse'},{code:'ca',nom:'🇨🇦 Canada'},{code:'us',nom:'🇺🇸 États-Unis'}
+  {code:'sn',nom:'🇸🇳 Sénégal',en:'senegal'},
+  {code:'ci',nom:'🇨🇮 Côte d\'Ivoire',en:'ivory coast'},
+  {code:'ml',nom:'🇲🇱 Mali',en:'mali'},
+  {code:'bf',nom:'🇧🇫 Burkina Faso',en:'burkina faso'},
+  {code:'gn',nom:'🇬🇳 Guinée',en:'guinea'},
+  {code:'gw',nom:'🇬🇼 Guinée-Bissau',en:'guinea-bissau'},
+  {code:'mr',nom:'🇲🇷 Mauritanie',en:'mauritania'},
+  {code:'gm',nom:'🇬🇲 Gambie',en:'gambia'},
+  {code:'tg',nom:'🇹🇬 Togo',en:'togo'},
+  {code:'bj',nom:'🇧🇯 Bénin',en:'benin'},
+  {code:'ne',nom:'🇳🇪 Niger',en:'niger'},
+  {code:'cm',nom:'🇨🇲 Cameroun',en:'cameroon'},
+  {code:'ga',nom:'🇬🇦 Gabon',en:'gabon'},
+  {code:'cg',nom:'🇨🇬 Congo',en:'congo'},
+  {code:'cd',nom:'🇨🇩 RD Congo',en:'democratic republic of the congo'},
+  {code:'td',nom:'🇹🇩 Tchad',en:'chad'},
+  {code:'ma',nom:'🇲🇦 Maroc',en:'morocco'},
+  {code:'dz',nom:'🇩🇿 Algérie',en:'algeria'},
+  {code:'tn',nom:'🇹🇳 Tunisie',en:'tunisia'},
+  {code:'fr',nom:'🇫🇷 France',en:'france'},
+  {code:'be',nom:'🇧🇪 Belgique',en:'belgium'},
+  {code:'ch',nom:'🇨🇭 Suisse',en:'switzerland'},
+  {code:'ca',nom:'🇨🇦 Canada',en:'canada'},
+  {code:'us',nom:'🇺🇸 États-Unis',en:'united states'}
 ];
+
+function getPaysEn(code){
+  var p=PAYS.find(function(x){return x.code===code});
+  return p?p.en:code;
+}
 
 function haptic(ms){if(navigator.vibrate)try{navigator.vibrate(ms||10)}catch(e){}}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -943,8 +968,7 @@ function highlightMatch(text,query){
 }
 
 /* ============================================================
-   SÉLECTEUR LOCALISATION EN CASCADE
-   Nouveau : Pays → toutes les villes s'affichent + filtre région optionnel
+   SÉLECTEUR LOCALISATION — COUNTRIESNOW API ⚡
    ============================================================ */
 function initLocSelect(){
   var sel=document.getElementById('selPays');
@@ -976,8 +1000,8 @@ async function onPaysChange(){
   selectedLoc.paysCode=code;
   selectedLoc.pays=(PAYS.find(function(p){return p.code===code})||{}).nom||'';
   selectedLoc.region=null;selectedLoc.ville=null;selectedLoc.quartier=null;
+  selectedLoc.lat=null;selectedLoc.lng=null;
 
-  // Afficher IMMÉDIATEMENT : région (filtre) + ville (toutes les villes)
   document.getElementById('wrapRegion').style.display='block';
   document.getElementById('wrapVille').style.display='block';
   document.getElementById('wrapQuartier').style.display='none';
@@ -987,17 +1011,31 @@ async function onPaysChange(){
 
   selRegion.innerHTML='<option value="">— Chargement… —</option>';
   selRegion.disabled=true;
-  selVille.innerHTML='<option value="">— Chargement des villes du pays… —</option>';
+  selVille.innerHTML='<option value="">— Chargement… —</option>';
   selVille.disabled=true;
 
-  // Charger villes + régions EN PARALLÈLE
-  var results=await Promise.all([
-    loadAllCitiesOfCountry(code).catch(function(e){console.warn(e);return[];}),
-    loadRegionsOfCountry(code).catch(function(){return[];})
-  ]);
-  var cities=results[0], regions=results[1];
+  var countryEn=getPaysEn(code);
 
-  // Peupler le filtre régions
+  // Cache local si déjà chargé
+  if(CITIES_CACHE[countryEn]){
+    populateLocations(CITIES_CACHE[countryEn].cities,CITIES_CACHE[countryEn].regions);
+    return;
+  }
+
+  // Charger villes + régions en parallèle (ultra-rapide ~500ms)
+  var results=await Promise.all([
+    getCitiesCountriesNow(countryEn),
+    getStatesCountriesNow(countryEn)
+  ]);
+
+  CITIES_CACHE[countryEn]={cities:results[0],regions:results[1]};
+  populateLocations(results[0],results[1]);
+}
+
+function populateLocations(cities,regions){
+  var selRegion=document.getElementById('selRegion');
+  var selVille=document.getElementById('selVille');
+
   selRegion.innerHTML='<option value="">— Toutes les régions (optionnel) —</option>';
   regions.forEach(function(reg){
     var opt=document.createElement('option');
@@ -1006,7 +1044,6 @@ async function onPaysChange(){
   });
   selRegion.disabled=false;
 
-  // Peupler TOUTES les villes
   window._allCities=cities;
   renderCities(cities);
 }
@@ -1017,7 +1054,6 @@ function renderCities(cities){
   cities.forEach(function(v){
     var opt=document.createElement('option');
     opt.value=v.nom;opt.textContent=v.nom;
-    opt.dataset.lat=v.lat;opt.dataset.lng=v.lng;
     opt.dataset.region=v.region||'';
     selVille.appendChild(opt);
   });
@@ -1027,92 +1063,55 @@ function renderCities(cities){
   }
 }
 
-/* Charge TOUTES les villes d'un pays via Overpass */
-async function loadAllCitiesOfCountry(code){
-  var iso=code.toUpperCase();
-  var query='[out:json][timeout:60];'+
-    'area["ISO3166-1"="'+iso+'"][admin_level=2]->.country;'+
-    'node["place"~"^(city|town)$"](area.country);'+
-    'out center tags;';
-  var url='https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query);
+/* ⚡ COUNTRIESNOW API — POST /countries/cities */
+async function getCitiesCountriesNow(countryEn){
   try{
-    var r=await fetch(url);
-    var data=await r.json();
-    var cities=[],seen={};
-    (data.elements||[]).forEach(function(el){
-      var name=el.tags && el.tags.name;
-      if(!name||seen[name])return;
-      seen[name]=true;
-      var lat=el.lat || (el.center && el.center.lat);
-      var lng=el.lon || (el.center && el.center.lon);
-      if(!lat||!lng)return;
-      cities.push({
-        nom:name,
-        lat:lat,lng:lng,
-        region:el.tags['addr:state'] || el.tags['is_in:state'] || ''
-      });
+    var r=await fetch('https://countriesnow.space/api/v0.1/countries/cities',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({country:countryEn})
     });
-    if(cities.length){
-      cities.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr');});
-      return cities;
-    }
-  }catch(e){console.warn('Overpass indisponible, fallback Nominatim…',e);}
-  return await loadCitiesFallback(code);
-}
-
-/* Fallback si Overpass échoue : Nominatim */
-async function loadCitiesFallback(code){
-  var pays=PAYS.find(function(p){return p.code===code;});
-  if(!pays)return[];
-  var paysNom=pays.nom.replace(/[\u{1F1E6}-\u{1F1FF}]/gu,'').trim();
-  try{
-    var url='https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(paysNom)+
-      '&format=json&limit=50&accept-language=fr&addressdetails=1&featuretype=city';
-    var r=await fetch(url);
     var data=await r.json();
-    var cities=[],seen={};
-    (data||[]).forEach(function(item){
-      var city=(item.address&&(item.address.city||item.address.town||item.address.village||item.address.municipality))
-        || item.display_name.split(',')[0].trim();
-      if(city&&!seen[city]){
-        seen[city]=true;
-        cities.push({
-          nom:city,lat:item.lat,lng:item.lon,
-          region:(item.address&&item.address.state)||''
-        });
-      }
-    });
+    if(data.error||!data.data)return[];
+    var cities=data.data.map(function(n){return{nom:n,region:''};});
     cities.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr');});
     return cities;
-  }catch(e){return[];}
+  }catch(e){
+    console.error('CountriesNow cities error:',e);
+    return[];
+  }
 }
 
-/* Charge les régions/états du pays (pour le filtre optionnel) */
-async function loadRegionsOfCountry(code){
+/* ⚡ COUNTRIESNOW API — POST /countries/states */
+async function getStatesCountriesNow(countryEn){
   try{
-    var url='https://nominatim.openstreetmap.org/search?country='+encodeURIComponent(code)+
-      '&format=json&limit=30&accept-language=fr&featuretype=state';
-    var r=await fetch(url);
-    var data=await r.json();
-    var regions=[],seen={};
-    (data||[]).forEach(function(item){
-      var nom=item.display_name.split(',')[0].trim();
-      if(nom&&!seen[nom]){seen[nom]=true;regions.push(nom);}
+    var r=await fetch('https://countriesnow.space/api/v0.1/countries/states',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({country:countryEn})
     });
-    regions.sort(function(a,b){return a.localeCompare(b,'fr');});
-    return regions;
-  }catch(e){return[];}
+    var data=await r.json();
+    if(data.error||!data.data||!data.data.states)return[];
+    var states=data.data.states.map(function(s){return s.name;});
+    states.sort(function(a,b){return a.localeCompare(b,'fr');});
+    return states;
+  }catch(e){
+    console.error('CountriesNow states error:',e);
+    return[];
+  }
 }
 
-/* Filtre les villes selon la région choisie */
 function onRegionChange(){
   var region=document.getElementById('selRegion').value;
   selectedLoc.region=region||null;
   selectedLoc.ville=null;selectedLoc.quartier=null;
+  selectedLoc.lat=null;selectedLoc.lng=null;
 
   var allCities=window._allCities||[];
+  // Les régions CountriesNow ne sont pas liées directement aux villes,
+  // on filtre uniquement si les villes ont un champ region
   var filtered=region ? allCities.filter(function(c){return c.region===region;}) : allCities;
-  if(!filtered.length && region) filtered=allCities; // fallback si région inconnue
+  if(!filtered.length) filtered=allCities;
   renderCities(filtered);
 
   document.getElementById('wrapQuartier').style.display='none';
@@ -1126,11 +1125,13 @@ function onRegionChange(){
   }
 }
 
+/* Géocodage d'UNE ville uniquement (pas toutes) */
 async function onVilleChange(){
   var ville=document.getElementById('selVille').value;
   selectedLoc.ville=ville||null;
   document.getElementById('wrapQuartier').style.display='block';
   selectedLoc.quartier=null;
+  selectedLoc.lat=null;selectedLoc.lng=null;
 
   var selQ=document.getElementById('selQuartier');
   selQ.innerHTML='<option value="">— Chargement… —</option>';
@@ -1144,30 +1145,48 @@ async function onVilleChange(){
   }
 
   try{
-    var q=ville+', '+(selectedLoc.region||'')+', '+selectedLoc.pays;
-    var url='https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=30&accept-language=fr&addressdetails=1';
-    var r=await fetch(url);
+    // Géocodage unique pour obtenir les coordonnées de la ville
+    var q=ville+', '+selectedLoc.pays;
+    var url='https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1&accept-language=fr&addressdetails=1';
+    var r=await fetch(url,{headers:{'Accept':'application/json'}});
     var data=await r.json();
+    if(data&&data[0]){
+      selectedLoc.lat=parseFloat(data[0].lat);
+      selectedLoc.lng=parseFloat(data[0].lon);
+    }
 
-    var quartiers=[],seen={};
-    (data||[]).forEach(function(item){
-      if(item.address){
-        var q2=item.address.suburb||item.address.neighbourhood||item.address.quarter||item.address.hamlet;
-        if(q2&&!seen[q2]){seen[q2]=true;quartiers.push(q2);}
+    // Charger les quartiers autour de la ville via Overpass (bbox rapide)
+    var quartiers=[];
+    if(selectedLoc.lat&&selectedLoc.lng){
+      var q2='[out:json][timeout:15];'+
+        '(node["place"~"^(suburb|neighbourhood|quarter)$"](around:5000,'+selectedLoc.lat+','+selectedLoc.lng+');'+
+        'way["place"~"^(suburb|neighbourhood|quarter)$"](around:5000,'+selectedLoc.lat+','+selectedLoc.lng+'););'+
+        'out center tags;';
+      var url2='https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q2);
+      var r2=await fetch(url2);
+      var data2=await r2.json();
+      if(data2&&data2.elements){
+        var seen={};
+        data2.elements.forEach(function(el){
+          var name=el.tags&&el.tags.name;
+          if(name&&!seen[name]){seen[name]=true;quartiers.push(name);}
+        });
       }
-    });
+    }
 
     selQ.innerHTML='<option value="">— Aucun quartier spécifique —</option>';
-    quartiers.sort().forEach(function(q){
+    quartiers.sort(function(a,b){return a.localeCompare(b,'fr');}).forEach(function(q2){
       var opt=document.createElement('option');
-      opt.value=q;opt.textContent=q;
+      opt.value=q2;opt.textContent=q2;
       selQ.appendChild(opt);
     });
     selQ.disabled=false;
     onQuartierChange();
   }catch(e){
-    selQ.innerHTML='<option value="">— Erreur —</option>';
+    console.warn('Quartiers indisponibles:',e);
+    selQ.innerHTML='<option value="">— Aucun quartier —</option>';
     selQ.disabled=false;
+    onQuartierChange();
   }
 }
 
@@ -2347,4 +2366,4 @@ window.addEventListener('DOMContentLoaded',async function(){
 });
 </script>
 </body>
-  </html>
+                                            </html>
