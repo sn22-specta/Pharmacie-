@@ -457,6 +457,10 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
 .loc-select option{padding:12px;font-size:15px;color:var(--c);background:var(--bg)}
 .loc-select.loading{background-image:none;padding-right:16px;color:var(--c-40)}
 
+.loc-label-optional{font-size:10px;font-weight:700;color:var(--c-60);
+  background:var(--c-08);padding:2px 8px;border-radius:var(--r-full);
+  margin-left:6px;text-transform:uppercase;letter-spacing:.04em}
+
 .pharma-suggestions{background:var(--bg);border-radius:var(--r);margin-top:8px;
   box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:280px;overflow-y:auto;display:none;
   border:1.5px solid var(--c-12)}
@@ -695,7 +699,7 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
       <div id="fReg" style="display:none">
         <div class="bar-info success">
           <b>✅ Inscription guidée</b><br>
-          Sélectionnez votre localisation, puis tapez le nom exact de votre pharmacie.
+          Sélectionnez votre pays : toutes les villes se chargent automatiquement. Affinez ensuite avec la région (optionnel).
         </div>
 
         <div class="field">
@@ -917,7 +921,7 @@ var PAYS=[
 function haptic(ms){if(navigator.vibrate)try{navigator.vibrate(ms||10)}catch(e){}}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function normalize(str){return String(str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()}
-function levenshtein(a,b){if(a===b)return 0;if(!a.length)return b.length;if(!b.length)return a.length;var m=[];for(var i=0;i<=b.length;i++)m[i]=[i];for(var j=0;j<=a.length;j++)m[0][j]=j;for(var i=1;i<=b.length;i++)for(var j=1;j<=a.length;j++)m[i][j]=b.charAt(i-1)===a.charAt(j-1)?m[i-1][j-1]:Math.min(m[i-1][j-1]+1,m[i][j-1]+1,m[i-1][j]+1);return m[b.length][a.length]}
+function levenshtein(a,b){if(a===b)return 0;if(!a.length)return b.length;if(!b.length)return a.length;var m=[];for(var i=0;i<=b.length;i++)m[i]=[i];for(var j=0;j<=a.length;j++)m[0][j]=j;for(var i=1;i<=b.length;i++)for(var j=1;j<=a.length;j++)m[i][j]=a.charAt(i-1)===b.charAt(j-1)?m[i-1][j-1]:Math.min(m[i-1][j-1]+1,m[i][j-1]+1,m[i-1][j]+1);return m[b.length][a.length]}
 function toast(msg,type){var c=document.getElementById('toasts');var el=document.createElement('div');el.className='toast'+(type?' '+type:'');el.innerHTML=ico(type==='err'?'alert':'check','sm')+'<span>'+escapeHtml(msg)+'</span>';c.appendChild(el);setTimeout(function(){el.classList.add('out');setTimeout(function(){el.remove()},300)},3200)}
 function fuzzyScore(q,t){if(!q||!t)return 0;q=normalize(q);t=normalize(t);if(t===q)return 1000;if(t.indexOf(q)===0)return 900-t.length;if(t.indexOf(q)>-1)return 700-t.indexOf(q);var qw=q.split(' ').filter(Boolean),tw=t.split(' ').filter(Boolean);if(qw.length>1&&qw.every(function(w){return tw.some(function(x){return x.indexOf(w)>-1||levenshtein(w,x)<=2})}))return 600;var best=0;tw.forEach(function(x){qw.forEach(function(w){var d=levenshtein(w,x),ml=Math.max(w.length,x.length);var sim=ml?Math.round((1-d/ml)*100):0;if(w.length>=5&&d<=2)sim=Math.max(sim,60);if(sim>best)best=sim})});return best*5}
 function computeDistance(a,b){var R=6371;var dLat=(b.lat-a.lat)*Math.PI/180;var dLng=(b.lng-a.lng)*Math.PI/180;var la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180;var h=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)*Math.sin(dLng/2);return 2*R*Math.asin(Math.sqrt(h))}
@@ -940,6 +944,7 @@ function highlightMatch(text,query){
 
 /* ============================================================
    SÉLECTEUR LOCALISATION EN CASCADE
+   Nouveau : Pays → toutes les villes s'affichent + filtre région optionnel
    ============================================================ */
 function initLocSelect(){
   var sel=document.getElementById('selPays');
@@ -970,79 +975,160 @@ async function onPaysChange(){
   if(!code)return;
   selectedLoc.paysCode=code;
   selectedLoc.pays=(PAYS.find(function(p){return p.code===code})||{}).nom||'';
-
-  document.getElementById('wrapRegion').style.display='block';
-  document.getElementById('wrapVille').style.display='none';
-  document.getElementById('wrapQuartier').style.display='none';
   selectedLoc.region=null;selectedLoc.ville=null;selectedLoc.quartier=null;
 
+  // Afficher IMMÉDIATEMENT : région (filtre) + ville (toutes les villes)
+  document.getElementById('wrapRegion').style.display='block';
+  document.getElementById('wrapVille').style.display='block';
+  document.getElementById('wrapQuartier').style.display='none';
+
   var selRegion=document.getElementById('selRegion');
+  var selVille=document.getElementById('selVille');
+
   selRegion.innerHTML='<option value="">— Chargement… —</option>';
   selRegion.disabled=true;
+  selVille.innerHTML='<option value="">— Chargement des villes du pays… —</option>';
+  selVille.disabled=true;
 
-  try{
-    var url='https://nominatim.openstreetmap.org/search?country='+encodeURIComponent(code)+'&format=json&limit=20&accept-language=fr&featuretype=state';
-    var r=await fetch(url);
-    var data=await r.json();
+  // Charger villes + régions EN PARALLÈLE
+  var results=await Promise.all([
+    loadAllCitiesOfCountry(code).catch(function(e){console.warn(e);return[];}),
+    loadRegionsOfCountry(code).catch(function(){return[];})
+  ]);
+  var cities=results[0], regions=results[1];
 
-    selRegion.innerHTML='<option value="">— Choisir une région —</option>';
-    (data||[]).forEach(function(item){
-      var nom=item.display_name.split(',')[0].trim();
-      var opt=document.createElement('option');
-      opt.value=nom;opt.textContent=nom;
-      opt.dataset.lat=item.lat;opt.dataset.lng=item.lon;
-      selRegion.appendChild(opt);
-    });
-    selRegion.disabled=false;
-  }catch(e){
-    selRegion.innerHTML='<option value="">— Région (passer) —</option>';
-    selRegion.disabled=false;
+  // Peupler le filtre régions
+  selRegion.innerHTML='<option value="">— Toutes les régions (optionnel) —</option>';
+  regions.forEach(function(reg){
+    var opt=document.createElement('option');
+    opt.value=reg;opt.textContent=reg;
+    selRegion.appendChild(opt);
+  });
+  selRegion.disabled=false;
+
+  // Peupler TOUTES les villes
+  window._allCities=cities;
+  renderCities(cities);
+}
+
+function renderCities(cities){
+  var selVille=document.getElementById('selVille');
+  selVille.innerHTML='<option value="">— Choisir une ville ('+cities.length+') —</option>';
+  cities.forEach(function(v){
+    var opt=document.createElement('option');
+    opt.value=v.nom;opt.textContent=v.nom;
+    opt.dataset.lat=v.lat;opt.dataset.lng=v.lng;
+    opt.dataset.region=v.region||'';
+    selVille.appendChild(opt);
+  });
+  selVille.disabled=false;
+  if(!cities.length){
+    selVille.innerHTML='<option value="">— Aucune ville trouvée —</option>';
   }
 }
 
-async function onRegionChange(){
-  var region=document.getElementById('selRegion').value;
-  selectedLoc.region=region;
-
-  document.getElementById('wrapVille').style.display='block';
-  document.getElementById('wrapQuartier').style.display='none';
-  selectedLoc.ville=null;selectedLoc.quartier=null;
-
-  var selVille=document.getElementById('selVille');
-  selVille.innerHTML='<option value="">— Chargement… —</option>';
-  selVille.disabled=true;
-
+/* Charge TOUTES les villes d'un pays via Overpass */
+async function loadAllCitiesOfCountry(code){
+  var iso=code.toUpperCase();
+  var query='[out:json][timeout:60];'+
+    'area["ISO3166-1"="'+iso+'"][admin_level=2]->.country;'+
+    'node["place"~"^(city|town)$"](area.country);'+
+    'out center tags;';
+  var url='https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query);
   try{
-    var q=region?(region+', '+selectedLoc.pays):selectedLoc.pays;
-    var url='https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=30&accept-language=fr&addressdetails=1';
     var r=await fetch(url);
     var data=await r.json();
+    var cities=[],seen={};
+    (data.elements||[]).forEach(function(el){
+      var name=el.tags && el.tags.name;
+      if(!name||seen[name])return;
+      seen[name]=true;
+      var lat=el.lat || (el.center && el.center.lat);
+      var lng=el.lon || (el.center && el.center.lon);
+      if(!lat||!lng)return;
+      cities.push({
+        nom:name,
+        lat:lat,lng:lng,
+        region:el.tags['addr:state'] || el.tags['is_in:state'] || ''
+      });
+    });
+    if(cities.length){
+      cities.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr');});
+      return cities;
+    }
+  }catch(e){console.warn('Overpass indisponible, fallback Nominatim…',e);}
+  return await loadCitiesFallback(code);
+}
 
-    var villes=[],seen={};
+/* Fallback si Overpass échoue : Nominatim */
+async function loadCitiesFallback(code){
+  var pays=PAYS.find(function(p){return p.code===code;});
+  if(!pays)return[];
+  var paysNom=pays.nom.replace(/[\u{1F1E6}-\u{1F1FF}]/gu,'').trim();
+  try{
+    var url='https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(paysNom)+
+      '&format=json&limit=50&accept-language=fr&addressdetails=1&featuretype=city';
+    var r=await fetch(url);
+    var data=await r.json();
+    var cities=[],seen={};
     (data||[]).forEach(function(item){
-      if(item.address){
-        var v=item.address.city||item.address.town||item.address.village||item.address.municipality;
-        if(v&&!seen[v]){seen[v]=true;villes.push({nom:v,lat:item.lat,lng:item.lon});}
+      var city=(item.address&&(item.address.city||item.address.town||item.address.village||item.address.municipality))
+        || item.display_name.split(',')[0].trim();
+      if(city&&!seen[city]){
+        seen[city]=true;
+        cities.push({
+          nom:city,lat:item.lat,lng:item.lon,
+          region:(item.address&&item.address.state)||''
+        });
       }
     });
+    cities.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr');});
+    return cities;
+  }catch(e){return[];}
+}
 
-    selVille.innerHTML='<option value="">— Choisir une ville —</option>';
-    villes.forEach(function(v){
-      var opt=document.createElement('option');
-      opt.value=v.nom;opt.textContent=v.nom;
-      opt.dataset.lat=v.lat;opt.dataset.lng=v.lng;
-      selVille.appendChild(opt);
+/* Charge les régions/états du pays (pour le filtre optionnel) */
+async function loadRegionsOfCountry(code){
+  try{
+    var url='https://nominatim.openstreetmap.org/search?country='+encodeURIComponent(code)+
+      '&format=json&limit=30&accept-language=fr&featuretype=state';
+    var r=await fetch(url);
+    var data=await r.json();
+    var regions=[],seen={};
+    (data||[]).forEach(function(item){
+      var nom=item.display_name.split(',')[0].trim();
+      if(nom&&!seen[nom]){seen[nom]=true;regions.push(nom);}
     });
-    selVille.disabled=false;
-  }catch(e){
-    selVille.innerHTML='<option value="">— Ville (passer) —</option>';
-    selVille.disabled=false;
+    regions.sort(function(a,b){return a.localeCompare(b,'fr');});
+    return regions;
+  }catch(e){return[];}
+}
+
+/* Filtre les villes selon la région choisie */
+function onRegionChange(){
+  var region=document.getElementById('selRegion').value;
+  selectedLoc.region=region||null;
+  selectedLoc.ville=null;selectedLoc.quartier=null;
+
+  var allCities=window._allCities||[];
+  var filtered=region ? allCities.filter(function(c){return c.region===region;}) : allCities;
+  if(!filtered.length && region) filtered=allCities; // fallback si région inconnue
+  renderCities(filtered);
+
+  document.getElementById('wrapQuartier').style.display='none';
+
+  var help=document.getElementById('pharmaHelp');
+  if(help){
+    var parts=[selectedLoc.quartier,selectedLoc.ville,selectedLoc.region,selectedLoc.pays].filter(Boolean);
+    if(parts.length>=1){
+      help.innerHTML='📍 Localisation : <b>'+parts.slice(0,3).join(' · ')+'</b>';
+    }
   }
 }
 
 async function onVilleChange(){
   var ville=document.getElementById('selVille').value;
-  selectedLoc.ville=ville;
+  selectedLoc.ville=ville||null;
   document.getElementById('wrapQuartier').style.display='block';
   selectedLoc.quartier=null;
 
@@ -1086,7 +1172,7 @@ async function onVilleChange(){
 }
 
 function onQuartierChange(){
-  selectedLoc.quartier=document.getElementById('selQuartier').value;
+  selectedLoc.quartier=document.getElementById('selQuartier').value||null;
   var help=document.getElementById('pharmaHelp');
   if(help){
     var parts=[selectedLoc.quartier,selectedLoc.ville,selectedLoc.region,selectedLoc.pays].filter(Boolean);
@@ -2261,4 +2347,4 @@ window.addEventListener('DOMContentLoaded',async function(){
 });
 </script>
 </body>
-                                             </html>
+  </html>
