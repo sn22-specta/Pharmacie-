@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a7d5a">
+<title>Admin — Ma Pharmacie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --c:#0a7d5a;--bg:#fff;
+  --c-04:rgba(10,125,90,.04);--c-08:rgba(10,125,90,.08);
+  --c-12:rgba(10,125,90,.12);--c-16:rgba(10,125,90,.16);
+  --c-24:rgba(10,125,90,.24);--c-40:rgba(10,125,90,.40);
+  --c-60:rgba(10,125,90,.60);--c-80:rgba(10,125,90,.80);
+  --r-sm:8px;--r:12px;--r-lg:16px;--r-xl:22px;--r-full:999px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --warn:#e08b00;--danger:#d64545;--ok:#0a7d5a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',-apple-system,sans-serif;background:#f5f7f6;color:var(--c);
+  min-height:100vh;line-height:1.5;font-size:15px;
+  -webkit-font-smoothing:antialiased}
+input,button{font-family:inherit;font-size:15px;outline:none;border:none;background:none;color:inherit}
+button{cursor:pointer;transition:transform .12s var(--ease)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.ico{width:22px;height:22px;display:block;flex-shrink:0;stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ico.sm{width:18px;height:18px}
+.ico.lg{width:28px;height:28px}
+.ico.xl{width:42px;height:42px;stroke-width:1.5}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:linear-gradient(135deg,#0a7d5a,#075c42)}
+.login-card{background:#fff;border-radius:20px;padding:32px 24px;width:100%;max-width:400px;
+  box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.login-card .logo{
+  width:64px;height:64px;background:var(--c);color:#fff;
+  border-radius:18px;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;
+}
+.login-card h1{font-size:22px;font-weight:800;text-align:center;margin-bottom:8px;
+  letter-spacing:-.02em;color:#0f1e1a}
+.login-card p{text-align:center;color:var(--c-60);font-size:13.5px;
+  margin-bottom:24px;font-weight:500;line-height:1.5}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12.5px;font-weight:600;margin-bottom:7px;
+  color:#5a6b65;text-transform:uppercase;letter-spacing:.04em}
+.field input{width:100%;padding:14px 16px;border:1.5px solid #e2e8e6;border-radius:12px;
+  background:#fff;color:#0f1e1a;font-size:15px;font-weight:500;
+  transition:.18s var(--ease)}
+.field input:focus{border-color:var(--c);box-shadow:0 0 0 4px var(--c-12)}
+.btn{width:100%;padding:15px 18px;border-radius:12px;background:var(--c);color:#fff;
+  font-weight:600;font-size:15px;display:flex;align-items:center;
+  justify-content:center;gap:10px;margin-bottom:10px}
+.btn.outline{background:#fff;color:var(--c);border:1.5px solid var(--c-24)}
+.btn.danger{background:var(--danger)}
+.btn.warn{background:var(--warn)}
+.btn.sm{padding:11px 14px;font-size:14px}
+.btn.sm .ico{width:16px;height:16px}
+
+/* HEADER */
+header{background:var(--c);color:#fff;padding:16px 20px;
+  box-shadow:0 4px 20px var(--c-16);position:sticky;top:0;z-index:100}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;
+  letter-spacing:-.02em}
+.logo-box{width:36px;height:36px;background:#fff;color:var(--c);border-radius:11px;
+  display:flex;align-items:center;justify-content:center}
+.logo-box .ico{width:20px;height:20px;stroke-width:2}
+.logout-btn{background:rgba(255,255,255,.18);color:#fff;padding:8px 14px;
+  border-radius:var(--r-full);font-size:12.5px;font-weight:600;
+  display:flex;align-items:center;gap:6px}
+
+/* LAYOUT */
+.wrap{padding:18px;max-width:900px;margin:0 auto}
+.card{background:#fff;padding:18px;border-radius:16px;margin-bottom:14px;
+  border:1px solid #e8ecea}
+.card h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;
+  align-items:center;gap:10px;color:#0f1e1a}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{background:#fff;padding:16px;border-radius:16px;border:1.5px solid #e8ecea;
+  text-align:center}
+.stat .v{font-size:24px;font-weight:800;line-height:1.1;letter-spacing:-.03em}
+.stat .l{font-size:11px;color:var(--c-60);margin-top:4px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.03em}
+.stat.pending{border-color:var(--warn);background:#fff6e0}
+.stat.pending .v{color:var(--warn)}
+.stat.valid{border-color:var(--ok);background:#e6f4ef}
+.stat.valid .v{color:var(--ok)}
+.stat.refused{border-color:var(--danger);background:#fdecec}
+.stat.refused .v{color:var(--danger)}
+
+/* TABS */
+.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;
+  padding:4px 0;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 18px;border-radius:10px;background:#fff;color:#5a6b65;
+  border:1.5px solid #e8ecea;font-size:13px;font-weight:600;
+  white-space:nowrap;display:flex;align-items:center;gap:6px}
+.tab.on{background:var(--c);color:#fff;border-color:var(--c)}
+.tab .badge{background:#fff;color:var(--c);font-size:10px;font-weight:800;
+  padding:2px 7px;border-radius:10px;min-width:18px;text-align:center}
+.tab.on .badge{background:rgba(255,255,255,.25);color:#fff}
+
+/* PHARMACY CARD */
+.pharma-card{background:#fff;border-radius:16px;padding:18px;margin-bottom:12px;
+  border:1px solid #e8ecea;border-left:4px solid #e8ecea;
+  animation:slideIn .3s var(--ease)}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.pharma-card.statut-en_attente{border-left-color:var(--warn)}
+.pharma-card.statut-valide{border-left-color:var(--ok)}
+.pharma-card.statut-refuse{border-left-color:var(--danger);opacity:.75}
+.pharma-header{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:10px;margin-bottom:12px}
+.pharma-name{font-size:16px;font-weight:800;letter-spacing:-.02em;color:#0f1e1a;
+  margin-bottom:4px}
+.pharma-licence{font-size:11.5px;font-weight:700;color:var(--c-60);
+  background:#f0f5f3;padding:4px 10px;border-radius:6px;display:inline-block;
+  font-family:monospace;letter-spacing:.03em}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;
+  border-radius:var(--r-full);font-size:10.5px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.badge.pending{background:#fff6e0;color:var(--warn)}
+.badge.valid{background:#e6f4ef;color:var(--ok)}
+.badge.refused{background:#fdecec;color:var(--danger)}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+.pharma-info{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.info-row{display:flex;align-items:center;gap:8px;font-size:13px;
+  color:#5a6b65;font-weight:500}
+.info-row b{color:#0f1e1a;font-weight:700}
+
+.pharma-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:12px;
+  border-top:1px solid #f0f2f2}
+.pharma-actions .btn{flex:1;margin:0;min-width:110px}
+
+.empty{text-align:center;padding:60px 20px;color:var(--c-60)}
+.empty .ico{margin:0 auto 14px;color:#c8d0cc;width:56px;height:56px;stroke-width:1.5}
+.empty p{font-size:14px;font-weight:500;line-height:1.5}
+.empty b{color:#0f1e1a}
+
+/* LOADING */
+.loading{text-align:center;padding:60px 20px;color:var(--c-60)}
+.spinner{width:36px;height:36px;border:3px solid #e8ecea;border-top-color:var(--c);
+  border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+#toasts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:500;
+  display:flex;flex-direction:column-reverse;gap:8px;width:calc(100% - 40px);
+  max-width:400px;pointer-events:none}
+.toast{background:#0a7d5a;color:#fff;padding:13px 18px;border-radius:12px;
+  font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 24px rgba(10,125,90,.4);
+  animation:toastIn .3s var(--ease)}
+.toast.err{background:var(--danger)}
+.toast.warn{background:var(--warn)}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.toast.out{animation:toastOut .3s forwards}
+@keyframes toastOut{to{opacity:0;transform:translateY(-10px)}}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(15,30,26,.5);backdrop-filter:blur(4px);
+  display:none;z-index:300;align-items:flex-end;justify-content:center}
+.modal-bg.on{display:flex;animation:fadeIn .2s}
+.modal{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;
+  padding:8px 22px 30px;max-height:92vh;overflow-y:auto;
+  animation:slideUp .3s var(--ease)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal::before{content:"";display:block;width:44px;height:4px;background:#e8ecea;
+  border-radius:2px;margin:6px auto 18px}
+.modal h2{font-size:18px;font-weight:800;margin-bottom:16px;color:#0f1e1a}
+.modal-detail{background:#f5f7f6;padding:14px;border-radius:12px;margin-bottom:14px}
+.modal-detail .row{display:flex;justify-content:space-between;padding:8px 0;
+  font-size:13.5px;border-bottom:1px solid #e8ecea}
+.modal-detail .row:last-child{border-bottom:none}
+.modal-detail .row .lbl{color:#5a6b65;font-weight:500}
+.modal-detail .row .val{font-weight:700;color:#0f1e1a;text-align:right;
+  max-width:60%;word-break:break-word}
+.close-modal{background:none;color:#5a6b65;font-size:14px;width:100%;
+  padding:14px;font-weight:600;border-radius:12px;margin-top:6px}
+
+@media (max-width:500px){
+  .stats{grid-template-columns:1fr 1fr}
+  .stats .stat:last-child{grid-column:1/-1}
+  .wrap{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG SPRITE -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-pill" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-45 12 12)"/><path d="M9 9l6 6"/></symbol>
+  <symbol id="i-hospital" viewBox="0 0 24 24"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/><path d="M12 8v4"/><path d="M10 10h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 3h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+</svg>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <div class="logo">
+      <svg class="ico xl"><use href="#i-lock"/></svg>
+    </div>
+    <h1>Admin Ma Pharmacie</h1>
+    <p>Accès réservé à l'équipe de validation</p>
+    <div class="field">
+      <label>Mot de passe admin</label>
+      <input id="adminPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button class="btn" onclick="adminLogin()">
+      <svg class="ico"><use href="#i-arrow-right"/></svg>
+      Se connecter
+    </button>
+    <p style="text-align:center;font-size:11.5px;color:#5a6b65;margin-top:16px">
+      Mot de passe par défaut : <b>admin2024</b>
+    </p>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none">
+
+  <header>
+    <div class="top">
+      <div class="brand">
+        <div class="logo-box"><svg class="ico"><use href="#i-pill"/></svg></div>
+        <span>Admin Pharmacies</span>
+      </div>
+      <button class="logout-btn" onclick="adminLogout()">
+        <svg class="ico sm"><use href="#i-arrow-right"/></svg>
+        Sortir
+      </button>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat pending">
+        <div class="v" id="statPending">—</div>
+        <div class="l">En attente</div>
+      </div>
+      <div class="stat valid">
+        <div class="v" id="statValid">—</div>
+        <div class="l">Validées</div>
+      </div>
+      <div class="stat refused">
+        <div class="v" id="statRefused">—</div>
+        <div class="l">Refusées</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+      <button class="btn outline sm" onclick="loadPharmacies()">
+        <svg class="ico sm"><use href="#i-refresh"/></svg>
+        Actualiser la liste
+      </button>
+    </div>
+
+    <!-- Tabs filtres -->
+    <div class="tabs" id="filterTabs">
+      <button class="tab on" data-filter="en_attente" onclick="setFilter('en_attente')">
+        En attente <span class="badge" id="badgePending">0</span>
+      </button>
+      <button class="tab" data-filter="valide" onclick="setFilter('valide')">
+        Validées <span class="badge" id="badgeValid">0</span>
+      </button>
+      <button class="tab" data-filter="refuse" onclick="setFilter('refuse')">
+        Refusées <span class="badge" id="badgeRefused">0</span>
+      </button>
+      <button class="tab" data-filter="toutes" onclick="setFilter('toutes')">
+        Toutes
+      </button>
+    </div>
+
+    <!-- Liste -->
+    <div id="pharmaciesList">
+      <div class="loading">
+        <div class="spinner"></div>
+        Chargement...
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL détails -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+var ADMIN_PASSWORD = 'admin2024'; // ⚠️ Change ce mot de passe !
+var SESSION_KEY = 'mp_admin_session';
+
+var sb = null;
+try {
+  sb = window.supabase.createClient(
+    'https://zijtchbikewjduyddftg.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppanRjaGJpa2V3amR1eWRkZnRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxOTk2MjMsImV4cCI6MjEwNTc3NTYyM30.PNStNlu3Gs5sY1l4qdxIBBKjHd8QTwE8Iq7k8pOdT8M'
+  );
+} catch(e){ console.error(e); }
+
+var allPharmacies = [];
+var currentFilter = 'en_attente';
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function ico(name, cls){
+  return '<svg class="ico' + (cls ? ' ' + cls : '') + '"><use href="#i-' + name + '"/></svg>';
+}
+function escapeHtml(s){
+  return String(s || '').replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function toast(msg, type){
+  var c = document.getElementById('toasts');
+  var el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(function(){
+    el.classList.add('out');
+    setTimeout(function(){ el.remove(); }, 300);
+  }, 3000);
+}
+function haptic(ms){
+  if (navigator.vibrate) try { navigator.vibrate(ms || 10); } catch(e){}
+}
+function formatDate(iso){
+  if (!iso) return '—';
+  var d = new Date(iso);
+  var now = new Date();
+  var diff = (now - d) / 1000;
+  if (diff < 60) return 'À l\'instant';
+  if (diff < 3600) return Math.floor(diff / 60) + ' min';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' h';
+  if (diff < 172800) return 'Hier';
+  return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+function adminLogin(){
+  var pass = document.getElementById('adminPass').value;
+  if (!pass){ toast('Entrez le mot de passe', 'err'); return; }
+  if (pass !== ADMIN_PASSWORD){
+    toast('Mot de passe incorrect', 'err');
+    haptic(30);
+    return;
+  }
+  sessionStorage.setItem(SESSION_KEY, '1');
+  showAdminPanel();
+}
+
+function adminLogout(){
+  if (!confirm('Se déconnecter ?')) return;
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function showAdminPanel(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  loadPharmacies();
+}
+
+/* ============================================================
+   CHARGEMENT
+   ============================================================ */
+async function loadPharmacies(){
+  if (!sb){ toast('Supabase non chargé', 'err'); return; }
+  
+  document.getElementById('pharmaciesList').innerHTML =
+    '<div class="loading"><div class="spinner"></div>Chargement...</div>';
+  
+  var r = await sb.from('pharmacies').select('*').order('created_at', { ascending: false });
+  
+  if (r.error){
+    toast('Erreur : ' + r.error.message, 'err');
+    document.getElementById('pharmaciesList').innerHTML =
+      '<div class="empty">' + ico('file', 'xl') + '<p><b>Erreur</b><br>' + escapeHtml(r.error.message) + '</p></div>';
+    return;
+  }
+  
+  allPharmacies = r.data || [];
+  updateStats();
+  renderList();
+}
+
+function updateStats(){
+  var pending = allPharmacies.filter(function(p){ return p.statut === 'en_attente' || !p.statut; }).length;
+  var valid = allPharmacies.filter(function(p){ return p.statut === 'valide'; }).length;
+  var refused = allPharmacies.filter(function(p){ return p.statut === 'refuse'; }).length;
+  
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statValid').textContent = valid;
+  document.getElementById('statRefused').textContent = refused;
+  document.getElementById('badgePending').textContent = pending;
+  document.getElementById('badgeValid').textContent = valid;
+  document.getElementById('badgeRefused').textContent = refused;
+}
+
+function setFilter(f){
+  currentFilter = f;
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.classList.toggle('on', t.dataset.filter === f);
+  });
+  haptic(10);
+  renderList();
+}
+
+function renderList(){
+  var el = document.getElementById('pharmaciesList');
+  var list;
+  
+  if (currentFilter === 'toutes'){
+    list = allPharmacies;
+  } else if (currentFilter === 'en_attente'){
+    list = allPharmacies.filter(function(p){ return p.statut === 'en_attente' || !p.statut; });
+  } else {
+    list = allPharmacies.filter(function(p){ return p.statut === currentFilter; });
+  }
+  
+  if (!list.length){
+    var messages = {
+      'en_attente': ['Aucune pharmacie en attente', 'Toutes les demandes ont été traitées.'],
+      'valide': ['Aucune pharmacie validée', 'Les pharmacies validées apparaîtront ici.'],
+      'refuse': ['Aucune pharmacie refusée', 'Les refus apparaîtront ici.'],
+      'toutes': ['Aucune pharmacie', 'Les demandes apparaîtront ici.']
+    };
+    var m = messages[currentFilter] || messages.toutes;
+    el.innerHTML = '<div class="empty">' + ico('hospital', 'xl') +
+      '<p><b>' + m[0] + '</b><br>' + m[1] + '</p></div>';
+    return;
+  }
+  
+  el.innerHTML = list.map(renderPharmacyCard).join('');
+}
+
+function renderPharmacyCard(p){
+  var statut = p.statut || 'en_attente';
+  var statutLabel = {
+    'en_attente': 'En attente',
+    'valide': 'Validée',
+    'refuse': 'Refusée'
+  }[statut] || statut;
+  
+  var badgeClass = {
+    'en_attente': 'pending',
+    'valide': 'valid',
+    'refuse': 'refused'
+  }[statut] || 'pending';
+  
+  var actions = '';
+  if (statut === 'en_attente' || !p.statut){
+    actions = 
+      '<button class="btn sm" onclick="validerPharmacie(\'' + p.id + '\')">' +
+        ico('check', 'sm') + 'Valider' +
+      '</button>' +
+      '<button class="btn danger sm" onclick="refuserPharmacie(\'' + p.id + '\')">' +
+        ico('close', 'sm') + 'Refuser' +
+      '</button>';
+  } else if (statut === 'valide'){
+    actions = 
+      '<button class="btn outline sm" onclick="refuserPharmacie(\'' + p.id + '\')">' +
+        ico('close', 'sm') + 'Révoquer l\'accès' +
+      '</button>';
+  } else if (statut === 'refuse'){
+    actions = 
+      '<button class="btn sm" onclick="validerPharmacie(\'' + p.id + '\')">' +
+        ico('check', 'sm') + 'Valider finalement' +
+      '</button>';
+  }
+  
+  return '<div class="pharma-card statut-' + statut + '">' +
+    '<div class="pharma-header">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="pharma-name">' + escapeHtml(p.nom || 'Sans nom') + '</div>' +
+        '<div class="pharma-licence">' + escapeHtml(p.licence || 'Licence non renseignée') + '</div>' +
+      '</div>' +
+      '<span class="badge ' + badgeClass + '">' +
+        '<span class="dot"></span>' + statutLabel +
+      '</span>' +
+    '</div>' +
+    
+    '<div class="pharma-info">' +
+      '<div class="info-row">' + ico('phone', 'sm') + '<span>Téléphone : <b>' + escapeHtml(p.tel || '—') + '</b></span></div>' +
+      '<div class="info-row">' + ico('pin', 'sm') + '<span>Adresse : <b>' + escapeHtml(p.adresse || '—') + '</b></span></div>' +
+      '<div class="info-row">' + ico('clock', 'sm') + '<span>Demande : <b>' + formatDate(p.created_at) + '</b></span></div>' +
+    '</div>' +
+    
+    '<div class="pharma-actions">' +
+      actions +
+      '<button class="btn outline sm" onclick="voirDetails(\'' + p.id + '\')" style="flex:0 0 auto">' +
+        ico('eye', 'sm') + 'Détails' +
+      '</button>' +
+    '</div>' +
+  '</div>';
+}
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+async function validerPharmacie(id){
+  var p = allPharmacies.find(function(x){ return x.id === id; });
+  if (!p) return;
+  if (!confirm('Valider « ' + p.nom + ' » ?\n\nCette pharmacie apparaîtra immédiatement chez tous les patients.')) return;
+  
+  haptic(20);
+  var r = await sb.from('pharmacies').update({
+    statut: 'valide',
+    licence_verifiee: true
+  }).eq('id', id);
+  
+  if (r.error){ toast('Erreur : ' + r.error.message, 'err'); return; }
+  
+  toast('✅ Pharmacie validée', 'ok');
+  haptic(30);
+  await loadPharmacies();
+}
+
+async function refuserPharmacie(id){
+  var p = allPharmacies.find(function(x){ return x.id === id; });
+  if (!p) return;
+  var raison = prompt('Raison du refus (optionnel) :', 'Licence non vérifiable');
+  if (raison === null) return;
+  
+  haptic(20);
+  var r = await sb.from('pharmacies').update({
+    statut: 'refuse'
+  }).eq('id', id);
+  
+  if (r.error){ toast('Erreur : ' + r.error.message, 'err'); return; }
+  
+  toast('Pharmacie refusée', 'warn');
+  haptic(30);
+  await loadPharmacies();
+}
+
+function voirDetails(id){
+  var p = allPharmacies.find(function(x){ return x.id === id; });
+  if (!p) return;
+  haptic(10);
+  
+  var statut = p.statut || 'en_attente';
+  var statutLabel = { 'en_attente':'En attente', 'valide':'Validée', 'refuse':'Refusée' }[statut] || statut;
+  
+  document.getElementById('modalContent').innerHTML =
+    '<h2>' + ico('hospital') + escapeHtml(p.nom || 'Pharmacie') + '</h2>' +
+    
+    '<div class="modal-detail">' +
+      '<div class="row"><span class="lbl">Statut</span><span class="val">' + statutLabel + '</span></div>' +
+      '<div class="row"><span class="lbl">Licence</span><span class="val">' + escapeHtml(p.licence || '—') + '</span></div>' +
+      '<div class="row"><span class="lbl">Téléphone</span><span class="val">' + escapeHtml(p.tel || '—') + '</span></div>' +
+      '<div class="row"><span class="lbl">Adresse</span><span class="val">' + escapeHtml(p.adresse || '—') + '</span></div>' +
+      '<div class="row"><span class="lbl">GPS</span><span class="val">' +
+        (p.lat != null && p.lng != null ? p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) : '—') +
+      '</span></div>' +
+      '<div class="row"><span class="lbl">Demande créée</span><span class="val">' + formatDate(p.created_at) + '</span></div>' +
+      '<div class="row"><span class="lbl">ID</span><span class="val" style="font-size:11px;font-family:monospace">' + escapeHtml(p.id) + '</span></div>' +
+    '</div>' +
+    
+    '<div style="display:flex;gap:8px;margin-bottom:10px">' +
+      (p.lat && p.lng ?
+        '<button class="btn outline sm" style="flex:1;margin:0" onclick="window.open(\'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lng + '\')">' +
+          ico('pin','sm') + 'Voir sur la carte' +
+        '</button>' : '') +
+      (p.tel ?
+        '<button class="btn outline sm" style="flex:1;margin:0" onclick="window.location.href=\'tel:' + p.tel.replace(/\s/g,'') + '\'">' +
+          ico('phone','sm') + 'Appeler' +
+        '</button>' : '') +
+    '</div>' +
+    
+    (statut === 'en_attente' ?
+      '<button class="btn" onclick="closeModal();validerPharmacie(\'' + p.id + '\')">' +
+        ico('check') + 'Valider cette pharmacie' +
+      '</button>' +
+      '<button class="btn danger" onclick="closeModal();refuserPharmacie(\'' + p.id + '\')">' +
+        ico('close') + 'Refuser' +
+      '</button>' : '') +
+    
+    '<button class="close-modal" onclick="closeModal()">Fermer</button>';
+  
+  document.getElementById('modalBg').classList.add('on');
+}
+
+function closeModal(){
+  document.getElementById('modalBg').classList.remove('on');
+  document.getElementById('modalContent').innerHTML = '';
+}
+
+/* ============================================================
+   DÉMARRAGE
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', function(){
+  // Auto-login si session active
+  if (sessionStorage.getItem(SESSION_KEY) === '1'){
+    showAdminPanel();
+  }
+  // Focus sur le champ password
+  setTimeout(function(){
+    var p = document.getElementById('adminPass');
+    if (p) p.focus();
+  }, 200);
+});
+</script>
+</body>
+                                           </html>
