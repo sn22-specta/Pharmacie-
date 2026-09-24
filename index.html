@@ -1,1500 +1,520 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<meta name="theme-color" content="#0a7d5a" />
-<title>Ma Pharmacie — Trouvez votre médicament</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ma Pharmacie</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  :root{
-    --vert:#0a7d5a; --vert-clair:#e6f4ef; --vert-fonce:#075c42;
-    --gris:#f5f7f8; --texte:#12211c; --texte-doux:#5a6b65;
-    --bord:#e2e8e6; --rouge:#d64545; --orange:#e08b00;
-    --ombre:0 2px 12px rgba(0,0,0,.08); --radius:14px;
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--gris);color:var(--texte);}
-  body{padding-bottom:80px;min-height:100vh;}
-  button{font-family:inherit;cursor:pointer;border:none;}
-  input,select,textarea{font-family:inherit;font-size:15px;}
-
-  header{
-    background:var(--vert);color:#fff;padding:16px 18px 22px;
-    border-radius:0 0 24px 24px;box-shadow:var(--ombre);
-    position:sticky;top:0;z-index:900;
-  }
-  .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;}
-  .logo .croix{width:28px;height:28px;background:#fff;border-radius:8px;position:relative;flex-shrink:0;}
-  .logo .croix::before,.logo .croix::after{content:"";position:absolute;background:var(--vert);border-radius:2px;}
-  .logo .croix::before{width:15px;height:4px;top:12px;left:6.5px;}
-  .logo .croix::after{width:4px;height:15px;top:6.5px;left:12px;}
-  .menu-btn{
-    background:rgba(255,255,255,.18);color:#fff;width:42px;height:42px;
-    border-radius:12px;display:flex;align-items:center;justify-content:center;
-    flex-direction:column;gap:4px;
-  }
-  .menu-btn span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;}
-  .header-sub{font-size:13px;opacity:.9;line-height:1.4;margin-bottom:14px;}
-  .search-wrap{position:relative;}
-  .search-wrap svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:19px;height:19px;stroke:var(--texte-doux);}
-  #search{
-    width:100%;padding:16px 16px 16px 46px;border-radius:14px;border:none;
-    font-size:16px;outline:none;background:#fff;color:var(--texte);
-    box-shadow:0 4px 14px rgba(0,0,0,.12);
-  }
-  .search-hint{font-size:11.5px;color:rgba(255,255,255,.75);margin-top:8px;text-align:center;}
-
-  #suggestions{background:#fff;border-radius:14px;margin-top:8px;overflow:hidden;box-shadow:var(--ombre);display:none;position:relative;z-index:5;}
-  #suggestions.show{display:block;}
-  .sugg-item{padding:13px 16px;font-size:14px;border-bottom:1px solid var(--bord);display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
-  .sugg-item:last-child{border-bottom:none;}
-  .sugg-item:active{background:var(--vert-clair);}
-  .sugg-item small{color:var(--texte-doux);font-size:11.5px;}
-
-  .drawer-overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1500;
-    display:none;opacity:0;transition:.25s;
-  }
-  .drawer-overlay.show{display:block;opacity:1;}
-  .drawer{
-    position:fixed;top:0;right:-320px;bottom:0;width:300px;max-width:85%;
-    background:#fff;z-index:1600;transition:right .28s ease;
-    display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.15);
-  }
-  .drawer.show{right:0;}
-  .drawer-head{background:var(--vert);color:#fff;padding:22px 18px 20px;}
-  .drawer-head h3{margin:0 0 4px;font-size:17px;}
-  .drawer-head p{margin:0;font-size:12.5px;opacity:.85;}
-  .drawer-nav{padding:12px 0;flex:1;overflow-y:auto;}
-  .drawer-item{
-    display:flex;align-items:center;gap:14px;padding:14px 18px;
-    font-size:14.5px;color:var(--texte);cursor:pointer;background:none;
-    width:100%;text-align:left;border-bottom:1px solid var(--bord);
-  }
-  .drawer-item:active{background:var(--vert-clair);}
-  .drawer-item .ico{
-    width:38px;height:38px;border-radius:11px;background:var(--vert-clair);
-    display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;
-  }
-  .drawer-item .txt{flex:1;}
-  .drawer-item .txt small{display:block;font-size:11.5px;color:var(--texte-doux);margin-top:2px;}
-  .drawer-item.active{background:var(--vert-clair);}
-  .drawer-item.active .ico{background:#fff;}
-  .drawer-foot{padding:16px;font-size:11.5px;color:var(--texte-doux);text-align:center;border-top:1px solid var(--bord);}
-
-  .screen{display:none;}
-  .screen.active{display:block;}
-
-  .loc-bar{
-    display:flex;align-items:center;gap:8px;background:#fff;padding:12px 16px;
-    border-radius:12px;margin:-14px 18px 0;position:relative;z-index:5;
-    box-shadow:var(--ombre);font-size:13px;
-  }
-  .loc-bar .dot{width:9px;height:9px;border-radius:50%;background:var(--orange);flex-shrink:0;}
-  .loc-bar.ready .dot{background:var(--vert);}
-  .loc-bar .txt{flex:1;color:var(--texte-doux);}
-  .loc-bar button{background:var(--vert-clair);color:var(--vert-fonce);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;}
-
-  .main{padding:20px 18px;}
-  .welcome{text-align:center;padding:34px 8px;}
-  .welcome .icon{font-size:54px;margin-bottom:14px;}
-  .welcome h2{margin:0 0 8px;font-size:18px;}
-  .welcome p{margin:0 0 22px;font-size:13.5px;color:var(--texte-doux);line-height:1.6;}
-  .steps{text-align:left;background:#fff;border-radius:14px;padding:18px;box-shadow:var(--ombre);}
-  .step{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;}
-  .step:last-child{margin-bottom:0;}
-  .step .num{width:26px;height:26px;border-radius:50%;background:var(--vert-clair);color:var(--vert);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .step .txt{font-size:13.5px;line-height:1.5;padding-top:3px;}
-  .step .txt b{color:var(--vert);}
-
-  .loading{text-align:center;padding:50px 20px;}
-  .spinner{width:38px;height:38px;border:3.5px solid var(--bord);border-top-color:var(--vert);border-radius:50%;margin:0 auto 16px;animation:spin .8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .loading p{color:var(--texte-doux);font-size:14px;margin:0;}
-
-  .result-card{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.1);animation:pop .3s ease;}
-  @keyframes pop{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-  .result-header{background:linear-gradient(135deg,var(--vert),var(--vert-fonce));color:#fff;padding:18px;}
-  .result-label{font-size:11.5px;opacity:.85;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;}
-  .result-med{font-size:20px;font-weight:700;margin-bottom:2px;}
-  .result-forme{font-size:13px;opacity:.9;}
-  #miniMap{height:150px;width:100%;}
-  .result-body{padding:18px;}
-  .ph-name{font-size:18px;font-weight:700;margin-bottom:6px;}
-  .ph-addr{font-size:13.5px;color:var(--texte-doux);line-height:1.5;margin-bottom:12px;}
-  .stat-row{display:flex;gap:10px;margin-bottom:14px;}
-  .stat{flex:1;background:var(--vert-clair);border-radius:11px;padding:11px 10px;text-align:center;}
-  .stat .val{font-size:15px;font-weight:700;color:var(--vert-fonce);}
-  .stat .lbl{font-size:10.5px;color:var(--vert-fonce);opacity:.8;margin-top:2px;}
-  .status{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
-  .tag{font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;}
-  .tag.ok{background:var(--vert-clair);color:var(--vert-fonce);}
-  .tag.garde{background:#fff3d6;color:#8a5a00;}
-  .tag.ferme{background:#fde8e8;color:var(--rouge);}
-  .price-box{background:var(--gris);border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
-  .price-box .lbl{font-size:12.5px;color:var(--texte-doux);}
-  .price-box .val{font-size:22px;font-weight:700;color:var(--vert);}
-  .actions{display:flex;flex-direction:column;gap:10px;}
-  .btn-primary{background:var(--vert);color:#fff;padding:16px;border-radius:13px;font-size:15.5px;font-weight:700;width:100%;}
-  .btn-primary:active{background:var(--vert-fonce);}
-  .btn-row{display:flex;gap:10px;}
-  .btn-secondary{flex:1;background:var(--gris);color:var(--texte);padding:14px;border-radius:12px;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;}
-  .btn-secondary:active{background:var(--bord);}
-
-  .empty{text-align:center;padding:50px 20px;background:#fff;border-radius:20px;box-shadow:var(--ombre);}
-  .empty .icon{font-size:52px;margin-bottom:14px;}
-  .empty h3{margin:0 0 8px;font-size:17px;}
-  .empty p{margin:0 0 6px;font-size:13.5px;color:var(--texte-doux);line-height:1.6;}
-  .empty .hint{font-size:12.5px;color:var(--orange);margin-top:12px;}
-
-  .auth-wrap{
-    min-height:calc(100vh - 100px);display:flex;align-items:center;justify-content:center;
-    padding:20px;background:linear-gradient(135deg,var(--vert),var(--vert-fonce));
-  }
-  .auth-card{background:#fff;border-radius:20px;padding:26px 22px;width:100%;max-width:420px;box-shadow:0 10px 40px rgba(0,0,0,.2);}
-  .auth-card h1{margin:0 0 6px;font-size:22px;text-align:center;}
-  .auth-card p.top{text-align:center;color:var(--texte-doux);font-size:13.5px;margin:0 0 20px;line-height:1.5;}
-  .auth-tabs{display:flex;gap:8px;margin-bottom:18px;background:var(--gris);padding:4px;border-radius:11px;}
-  .auth-tab{flex:1;padding:10px;border-radius:8px;background:transparent;font-size:13px;font-weight:600;color:var(--texte-doux);}
-  .auth-tab.active{background:#fff;color:var(--vert);box-shadow:0 1px 4px rgba(0,0,0,.08);}
-
-  .tabs{display:flex;gap:6px;padding:12px 14px 0;overflow-x:auto;scrollbar-width:none;}
-  .tabs::-webkit-scrollbar{display:none;}
-  .tab{background:#fff;color:var(--texte-doux);font-size:13px;font-weight:600;padding:10px 16px;border-radius:11px;white-space:nowrap;border:1px solid var(--bord);}
-  .tab.active{background:var(--vert);color:#fff;border-color:var(--vert);}
-  .content{padding:16px 14px;}
-
-  .card{background:#fff;border-radius:var(--radius);padding:16px;box-shadow:var(--ombre);margin-bottom:14px;}
-  .card-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
-  .card-title small{font-size:12px;color:var(--texte-doux);font-weight:400;}
-
-  .field{margin-bottom:14px;}
-  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--texte-doux);margin-bottom:6px;}
-  .field input,.field select,.field textarea{width:100%;padding:13px 14px;border-radius:11px;border:1.5px solid var(--bord);outline:none;background:#fff;color:var(--texte);transition:.15s;}
-  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--vert);}
-  .field .help{font-size:11.5px;color:var(--texte-doux);margin-top:5px;}
-  .row{display:flex;gap:10px;}
-  .row .field{flex:1;}
-  .checkbox{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--gris);border-radius:11px;cursor:pointer;font-size:13.5px;}
-  .checkbox input{width:18px;height:18px;accent-color:var(--vert);}
-
-  .product{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.05);border-left:4px solid var(--vert);}
-  .product.low{border-left-color:var(--orange);}
-  .product.out{border-left-color:var(--rouge);opacity:.7;}
-  .prod-info{flex:1;min-width:0;}
-  .prod-name{font-weight:600;font-size:14px;margin-bottom:3px;}
-  .prod-meta{font-size:11.5px;color:var(--texte-doux);display:flex;flex-wrap:wrap;gap:6px;}
-  .prod-price{font-weight:700;color:var(--vert);font-size:14px;}
-  .prod-qty{background:var(--vert-clair);color:var(--vert-fonce);font-weight:700;font-size:12px;padding:6px 10px;border-radius:9px;text-align:center;min-width:56px;}
-  .prod-qty.low{background:#fff3d6;color:#8a5a00;}
-  .prod-qty.out{background:#fde8e8;color:var(--rouge);}
-  .prod-actions{display:flex;flex-direction:column;gap:5px;}
-  .icon-btn{background:var(--gris);padding:6px 9px;border-radius:8px;font-size:13px;color:var(--texte);}
-  .icon-btn.del{color:var(--rouge);}
-
-  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-  .stat-box{background:#fff;border-radius:12px;padding:14px;box-shadow:var(--ombre);}
-  .stat-box .val{font-size:22px;font-weight:700;color:var(--vert);}
-  .stat-box .lbl{font-size:11.5px;color:var(--texte-doux);margin-top:3px;}
-  .stat-box.warn .val{color:var(--orange);}
-  .stat-box.danger .val{color:var(--rouge);}
-
-  #gpsMapReg,#gpsMapProfil{height:200px;border-radius:12px;margin-bottom:12px;}
-
-  .guide-step{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--bord);}
-  .guide-step:last-child{border-bottom:none;}
-  .guide-num{width:28px;height:28px;border-radius:50%;background:var(--vert-clair);color:var(--vert);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .guide-txt{font-size:13.5px;line-height:1.55;}
-  .guide-txt b{color:var(--vert);display:block;margin-bottom:2px;}
-
-  .quick-search{position:relative;margin-bottom:14px;}
-  .quick-search input{width:100%;padding:13px 14px 13px 42px;border-radius:12px;border:1.5px solid var(--bord);outline:none;font-size:14.5px;}
-  .quick-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:17px;height:17px;stroke:var(--texte-doux);}
-
-  .badge-count{background:var(--rouge);color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:5px;}
-
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:none;align-items:flex-end;justify-content:center;}
-  .overlay.show{display:flex;}
-  .modal{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:22px 18px 28px;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease;}
-  @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
-  .modal h2{margin:0 0 4px;font-size:18px;}
-  .modal .sub{color:var(--texte-doux);font-size:13px;margin-bottom:18px;}
-  .modal .order-line{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bord);font-size:14px;}
-  .modal .order-line:last-of-type{border-bottom:none;}
-  .modal .order-line .lbl{color:var(--texte-doux);}
-  .modal .order-total{display:flex;justify-content:space-between;font-weight:700;font-size:16px;padding:14px 0;margin-top:6px;border-top:2px dashed var(--bord);}
-  .choix{display:flex;gap:10px;margin:16px 0;}
-  .choix button{flex:1;padding:13px;border-radius:11px;background:var(--gris);font-size:13.5px;font-weight:600;color:var(--texte);border:2px solid transparent;}
-  .choix button.active{background:var(--vert-clair);border-color:var(--vert);color:var(--vert-fonce);}
-  .btn-main{width:100%;background:var(--vert);color:#fff;padding:15px;border-radius:12px;font-size:15px;font-weight:700;}
-  .btn-close{width:100%;background:transparent;color:var(--texte-doux);padding:12px;font-size:13.5px;margin-top:4px;}
-
-  .success{text-align:center;padding:20px 0;}
-  .success .check{width:70px;height:70px;border-radius:50%;background:var(--vert-clair);color:var(--vert);font-size:36px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
-  .success h3{margin:0 0 8px;font-size:18px;}
-  .success p{color:var(--texte-doux);font-size:13.5px;line-height:1.6;margin:0 0 4px;}
-  .success .code{display:inline-block;background:var(--gris);padding:8px 16px;border-radius:9px;font-weight:700;font-size:16px;color:var(--vert);letter-spacing:1.5px;margin:14px 0;}
-
-  #toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--texte);color:#fff;padding:12px 20px;border-radius:11px;font-size:13px;z-index:3000;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center;}
-  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#f5f7f8;color:#12211c;padding-bottom:20px}
+header{background:#0a7d5a;color:#fff;padding:16px 18px;border-radius:0 0 20px 20px;position:sticky;top:0;z-index:100}
+.top{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:18px}
+.menu-btn{background:rgba(255,255,255,.2);color:#fff;width:42px;height:42px;border:none;border-radius:10px;font-size:22px;cursor:pointer}
+.sub{font-size:13px;opacity:.9;margin:8px 0 12px}
+input,select,button{font-family:inherit;font-size:15px}
+.search{width:100%;padding:15px;border:none;border-radius:12px;outline:none}
+.wrap{padding:18px}
+.card{background:#fff;padding:16px;border-radius:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.btn{width:100%;padding:14px;border:none;border-radius:11px;background:#0a7d5a;color:#fff;font-weight:700;cursor:pointer;margin-bottom:8px}
+.btn.sec{background:#f5f7f8;color:#12211c}
+.btn.red{background:#d64545}
+.tab{display:inline-block;padding:8px 14px;background:#f5f7f8;border-radius:9px;font-size:13px;font-weight:600;margin-right:6px;cursor:pointer;border:none}
+.tab.on{background:#0a7d5a;color:#fff}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#5a6b65}
+.field input,.field select{width:100%;padding:12px;border:1.5px solid #e2e8e6;border-radius:10px;outline:none}
+.screen{display:none}
+.screen.on{display:block}
+#drawer{position:fixed;top:0;right:-320px;bottom:0;width:300px;max-width:85%;background:#fff;transition:right .3s;z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,.15)}
+#drawer.on{right:0}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:199}
+#ov.on{display:block}
+.ditem{display:block;width:100%;padding:16px 20px;border:none;background:none;text-align:left;font-size:15px;border-bottom:1px solid #e2e8e6;cursor:pointer}
+.res{background:#fff;border-radius:16px;overflow:hidden;margin-bottom:12px}
+.res-h{background:#0a7d5a;color:#fff;padding:16px}
+.res-h b{font-size:18px}
+.res-b{padding:16px}
+#map{height:150px;border-radius:10px;margin-bottom:12px}
+.tag{display:inline-block;padding:4px 9px;border-radius:6px;font-size:11px;font-weight:600;background:#e6f4ef;color:#075c42;margin-right:4px}
+.price{font-size:22px;font-weight:700;color:#0a7d5a}
+.prod{display:flex;gap:10px;padding:12px;background:#fff;border-radius:12px;margin-bottom:8px;border-left:4px solid #0a7d5a}
+.prod b{display:block;font-size:14px;margin-bottom:4px}
+.prod small{color:#5a6b65;font-size:12px}
+.qte{margin-left:auto;text-align:center;font-weight:700;color:#0a7d5a}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#12211c;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;z-index:500;opacity:0;transition:.3s;pointer-events:none}
+#toast.on{opacity:1}
+.load{text-align:center;padding:40px;color:#5a6b65}
 </style>
 </head>
 <body>
 
-<div class="drawer-overlay" id="drawerOverlay"></div>
-<aside class="drawer" id="drawer">
-  <div class="drawer-head">
-    <h3>Ma Pharmacie</h3>
-    <p>Trouvez votre médicament le plus proche</p>
+<!-- DRAWER -->
+<div id="ov" onclick="closeDrawer()"></div>
+<aside id="drawer">
+  <div style="background:#0a7d5a;color:#fff;padding:20px">
+    <div style="font-size:17px;font-weight:700">Ma Pharmacie</div>
+    <div style="font-size:12px;opacity:.85;margin-top:4px">Trouvez votre médicament</div>
   </div>
-  <nav class="drawer-nav">
-    <button class="drawer-item active" data-go="client">
-      <div class="ico">🔍</div>
-      <div class="txt">Espace Client<small>Chercher un médicament</small></div>
-    </button>
-    <button class="drawer-item" data-go="pharma">
-      <div class="ico">🏥</div>
-      <div class="txt">Espace Pharmacie<small>Connexion / Inscription</small></div>
-    </button>
-    <button class="drawer-item" data-go="about">
-      <div class="ico">ℹ️</div>
-      <div class="txt">À propos<small>Comment ça marche ?</small></div>
-    </button>
-    <button class="drawer-item" data-go="contact">
-      <div class="ico">📞</div>
-      <div class="txt">Contact<small>Support & aide</small></div>
-    </button>
-  </nav>
-  <div class="drawer-foot">v1.0 • © Ma Pharmacie</div>
+  <button class="ditem" onclick="go('client')">🔍 Espace Client</button>
+  <button class="ditem" onclick="go('pharma')">🏥 Espace Pharmacie</button>
+  <button class="ditem" onclick="go('about')">ℹ️ À propos</button>
 </aside>
 
-<header id="mainHeader">
-  <div class="header-top">
-    <div class="logo"><div class="croix"></div>Ma Pharmacie</div>
-    <button class="menu-btn" id="menuBtn" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
+<!-- HEADER -->
+<header>
+  <div class="top">
+    <span>💊 Ma Pharmacie</span>
+    <button class="menu-btn" onclick="openDrawer()">☰</button>
   </div>
-  <div id="headerContent">
-    <div class="header-sub" id="headerSub">
-      Tapez votre médicament.<br><b>On vous montre la pharmacie la plus proche qui l'a.</b>
-    </div>
-    <div class="search-wrap" id="headerSearch">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round">
-        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-      </svg>
-      <input id="search" type="search" placeholder="Ex : Paracétamol, Amoxicilline..." autocomplete="off" />
-      <div id="suggestions"></div>
-    </div>
-    <div class="search-hint" id="headerHint">💊 Nom commercial ou DCI (molécule)</div>
+  <div class="sub" id="hSub">Tapez votre médicament.<br><b>On vous montre la pharmacie la plus proche qui l'a.</b></div>
+  <div id="hSearch">
+    <input class="search" id="search" placeholder="Ex : Paracétamol, Amoxicilline..." autocomplete="off">
   </div>
 </header>
 
-<section class="screen active" id="screen-client">
-  <div class="loc-bar" id="locBar">
-    <div class="dot"></div>
-    <div class="txt" id="locTxt">Localisation en attente...</div>
-    <button id="locBtn">Activer</button>
-  </div>
-  <div class="main" id="mainPatient"></div>
-</section>
-
-<section class="screen" id="screen-pharma-auth">
-  <div class="auth-wrap">
-    <div class="auth-card">
-      <div style="text-align:center;margin-bottom:14px;">
-        <div style="width:56px;height:56px;background:var(--vert-clair);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;">🏥</div>
-      </div>
-      <h1>Espace Pharmacie</h1>
-      <p class="top">Gérez votre inventaire et aidez les patients à vous trouver.</p>
-
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tabLogin">Connexion</button>
-        <button class="auth-tab" id="tabRegister">Inscription</button>
-      </div>
-
-      <div id="loginForm">
-        <div class="field">
-          <label>Téléphone</label>
-          <input type="tel" id="loginTel" placeholder="+221 77 123 45 67" />
-        </div>
-        <div class="field">
-          <label>Mot de passe</label>
-          <input type="password" id="loginPass" placeholder="••••••••" />
-        </div>
-        <button class="btn-primary" id="btnLogin">Se connecter</button>
-        <p style="text-align:center;font-size:12px;color:var(--texte-doux);margin-top:14px;">
-          Pas encore inscrit ? <b style="color:var(--vert);cursor:pointer;" id="goRegister">Créer un compte</b>
-        </p>
-      </div>
-
-      <div id="registerForm" style="display:none;">
-        <div class="field">
-          <label>Nom de la pharmacie *</label>
-          <input type="text" id="regNom" placeholder="Ex : Pharmacie du Plateau" />
-        </div>
-        <div class="field">
-          <label>Numéro de licence</label>
-          <input type="text" id="regLicence" placeholder="Ex : SEN-PH-2024-0123" />
-        </div>
-        <div class="field">
-          <label>Téléphone (identifiant) *</label>
-          <input type="tel" id="regTel" placeholder="+221 77 123 45 67" />
-        </div>
-        <div class="field">
-          <label>Mot de passe * (6 caractères min)</label>
-          <input type="password" id="regPass" placeholder="••••••••" />
-        </div>
-        <div class="field">
-          <label>Adresse complète *</label>
-          <input type="text" id="regAdresse" placeholder="Ex : 12 Av. L.S. Senghor, Plateau, Dakar" />
-        </div>
-        <div class="field">
-          <label>Position GPS * (cliquez sur la carte)</label>
-          <div id="gpsMapReg"></div>
-          <div class="help" id="gpsHelp">📍 Cliquez sur la carte pour placer votre pharmacie</div>
-        </div>
-        <button class="btn-primary" id="btnRegister">Créer ma pharmacie</button>
-        <p style="text-align:center;font-size:12px;color:var(--texte-doux);margin-top:14px;">
-          Déjà inscrit ? <b style="color:var(--vert);cursor:pointer;" id="goLogin">Se connecter</b>
-        </p>
-      </div>
+<!-- ÉCRAN CLIENT -->
+<section class="screen on" id="s-client">
+  <div class="wrap">
+    <div class="card" style="text-align:center">
+      <div style="font-size:48px">💊</div>
+      <h2 style="margin:8px 0;font-size:17px">Comment ça marche ?</h2>
+      <p style="color:#5a6b65;font-size:13px;line-height:1.6">
+        1. Activez votre position<br>
+        2. Tapez votre médicament<br>
+        3. On vous montre <b style="color:#0a7d5a">LA pharmacie la plus proche</b>
+      </p>
+      <button class="btn" style="margin-top:14px" onclick="getPos()">📍 Activer ma position</button>
     </div>
+    <div id="result"></div>
   </div>
 </section>
 
-<section class="screen" id="screen-pharma-app">
-  <div style="background:var(--vert);color:#fff;padding:14px 18px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <b style="font-size:15px;" id="hPhName">—</b>
-      <button style="background:rgba(255,255,255,.18);color:#fff;font-size:12px;padding:6px 12px;border-radius:16px;" id="btnLogout">Déconnexion</button>
+<!-- ÉCRAN AUTH PHARMACIE -->
+<section class="screen" id="s-auth">
+  <div class="wrap">
+    <div class="card" style="text-align:center;margin-bottom:14px">
+      <div style="font-size:44px">🏥</div>
+      <h2 style="margin:8px 0;font-size:18px">Espace Pharmacie</h2>
     </div>
-    <div style="font-size:11.5px;opacity:.85;" id="hPhSub">—</div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" data-tab="dashboard">📊 Tableau de bord</button>
-    <button class="tab" data-tab="stock">💊 Mes stocks</button>
-    <button class="tab" data-tab="add">➕ Ajouter</button>
-    <button class="tab" data-tab="orders">🛒 Commandes <span class="badge-count" id="ordBadge" style="display:none;">0</span></button>
-    <button class="tab" data-tab="profil">⚙️ Profil</button>
-    <button class="tab" data-tab="guide">❓ Aide</button>
-  </div>
-
-  <div class="content" id="content"></div>
-</section>
-
-<section class="screen" id="screen-about">
-  <div class="main">
     <div class="card">
-      <div class="card-title">ℹ️ À propos</div>
-      <p style="font-size:13.5px;line-height:1.7;color:var(--texte-doux);">
-        <b style="color:var(--texte);">Ma Pharmacie</b> vous aide à trouver en quelques secondes la pharmacie la plus proche qui a votre médicament en stock.<br><br>
-        Chaque pharmacie partenaire remplit son inventaire. Vous tapez le nom de votre médicament, et on vous montre <b style="color:var(--vert);">LA pharmacie la plus proche qui l'a</b>.
+      <div style="margin-bottom:14px">
+        <button class="tab on" id="tLogin" onclick="authTab('login')">Connexion</button>
+        <button class="tab" id="tReg" onclick="authTab('reg')">Inscription</button>
+      </div>
+
+      <div id="fLogin">
+        <div class="field"><label>Téléphone</label><input id="lTel" type="tel" placeholder="+221 77 123 45 67"></div>
+        <div class="field"><label>Mot de passe</label><input id="lPass" type="password" placeholder="••••••"></div>
+        <button class="btn" onclick="doLogin()">Se connecter</button>
+      </div>
+
+      <div id="fReg" style="display:none">
+        <div class="field"><label>Nom pharmacie *</label><input id="rNom" placeholder="Ex : Pharmacie du Plateau"></div>
+        <div class="field"><label>Téléphone *</label><input id="rTel" type="tel" placeholder="+221 77 123 45 67"></div>
+        <div class="field"><label>Mot de passe * (6 car. min)</label><input id="rPass" type="password" placeholder="••••••"></div>
+        <div class="field"><label>Adresse *</label><input id="rAddr" placeholder="Ex : Plateau, Dakar"></div>
+        <div class="field"><label>Position GPS (cliquez sur la carte)</label>
+          <div id="mapReg" style="height:180px;border-radius:10px"></div>
+          <small id="gpsInfo" style="color:#5a6b65;font-size:12px">📍 Cliquez sur la carte</small>
+        </div>
+        <button class="btn" onclick="doRegister()">Créer ma pharmacie</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ÉCRAN DASHBOARD PHARMACIE -->
+<section class="screen" id="s-dash">
+  <div style="background:#0a7d5a;color:#fff;padding:14px 18px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b id="dName">—</b>
+      <button style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:6px 12px;border-radius:14px;font-size:12px" onclick="logout()">Déconnexion</button>
+    </div>
+    <div id="dAddr" style="font-size:11px;opacity:.85;margin-top:4px">—</div>
+  </div>
+  <div style="padding:12px 14px 0">
+    <button class="tab on" id="tDash" onclick="dashTab('dash')">📊 Stock</button>
+    <button class="tab" id="tAdd" onclick="dashTab('add')">➕ Ajouter</button>
+    <button class="tab" id="tOrd" onclick="dashTab('ord')">🛒 Commandes</button>
+  </div>
+  <div class="wrap" id="dashContent"></div>
+</section>
+
+<!-- ÉCRAN À PROPOS -->
+<section class="screen" id="s-about">
+  <div class="wrap">
+    <div class="card">
+      <h3>ℹ️ À propos</h3>
+      <p style="margin-top:10px;font-size:14px;line-height:1.6;color:#5a6b65">
+        <b>Ma Pharmacie</b> vous aide à trouver la pharmacie la plus proche qui a votre médicament en stock.
       </p>
     </div>
     <div class="card">
-      <div class="card-title">📞 Contact</div>
-      <p style="font-size:13.5px;line-height:1.7;">
-        Support : <b style="color:var(--vert);">support@mapharmacie.app</b><br>
-        Téléphone : <b style="color:var(--vert);">+221 77 000 00 00</b>
-      </p>
+      <h3>📞 Contact</h3>
+      <p style="margin-top:10px;font-size:14px;color:#5a6b65">support@mapharmacie.app</p>
     </div>
   </div>
 </section>
 
-<div class="overlay" id="overlay">
-  <div class="modal" id="modalContent"></div>
-</div>
 <div id="toast"></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ============================================================
-   CONFIGURATION SUPABASE
-   ============================================================ */
-const SUPABASE_URL = 'https://zijtchbikewjduyddftg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppanRjaGJpa2V3amR1eWRkZnRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxOTk2MjMsImV4cCI6MjEwNTc3NTYyM30.PNStNlu3Gs5sY1l4qdxIBBKjHd8QTwE8Iq7k8pOdT8M';
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* Convertit un téléphone en email fictif pour Supabase Auth */
-function phoneToEmail(tel){
-  return tel.replace(/[^0-9]/g, '') + '@pharmacie.local';
-}
-
-/* ============================================================
-   STOCKAGE LOCAL (préférences UI uniquement)
-   ============================================================ */
-const DB = {
-  get(k, f){ try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch(e){ return f; } },
-  set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
-  remove(k){ localStorage.removeItem(k); }
-};
-
-/* ============================================================
-   MÉDICAMENTS DE RÉFÉRENCE
-   ============================================================ */
-const MEDS_REF = [
-  { key:'paracetamol', nom:'Paracétamol 500 mg', dci:'Paracétamol', forme:'Comprimé' },
-  { key:'amoxicilline', nom:'Amoxicilline 500 mg', dci:'Amoxicilline', forme:'Gélule' },
-  { key:'amoxicilline-1g', nom:'Amoxicilline 1 g', dci:'Amoxicilline', forme:'Comprimé' },
-  { key:'ibuprofene', nom:'Ibuprofène 400 mg', dci:'Ibuprofène', forme:'Comprimé' },
-  { key:'coartem', nom:'Artéméther-Luméfantrine', dci:'Coartem', forme:'Comprimé' },
-  { key:'metronidazole', nom:'Métronidazole 250 mg', dci:'Métronidazole', forme:'Comprimé' },
-  { key:'omeprazole', nom:'Oméprazole 20 mg', dci:'Oméprazole', forme:'Gélule' },
-  { key:'salbutamol', nom:'Salbutamol spray', dci:'Salbutamol', forme:'Aérosol' },
-  { key:'vitamine c', nom:'Vitamine C 500 mg', dci:'Acide ascorbique', forme:'Effervescent' },
-  { key:'fer', nom:'Fer + Acide folique', dci:'Fer/Folate', forme:'Comprimé' },
-  { key:'aspirine', nom:'Aspirine 500 mg', dci:'Acide acétylsalicylique', forme:'Comprimé' },
-  { key:'cetirizine', nom:'Cétirizine 10 mg', dci:'Cétirizine', forme:'Comprimé' }
-];
-
-/* ============================================================
-   ÉTAT GLOBAL
-   ============================================================ */
-const state = {
-  userPos: null,
-  query: '',
-  result: null,
-  session: null,
-  currentTab: 'dashboard',
-  currentScreen: 'client',
-  gpsReg: null,
-  regMap: null,
-  regMarker: null
-};
-
-/* ============================================================
-   NAVIGATION ENTRE ÉCRANS
-   ============================================================ */
-function showScreen(name){
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-  state.currentScreen = name;
-
-  const headerContent = document.getElementById('headerContent');
-  if (name === 'client'){
-    headerContent.style.display = 'block';
-  } else {
-    headerContent.style.display = 'none';
-  }
-
-  document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active'));
-  if (name === 'client') document.querySelector('[data-go="client"]').classList.add('active');
-  if (name.startsWith('pharma')) document.querySelector('[data-go="pharma"]').classList.add('active');
-  if (name === 'about') document.querySelector('[data-go="about"]').classList.add('active');
-
-  window.scrollTo(0, 0);
-}
-
-document.querySelectorAll('.drawer-item').forEach(item => {
-  item.addEventListener('click', async () => {
-    const go = item.dataset.go;
-    fermerDrawer();
-    if (go === 'client'){
-      showScreen('client');
-    } else if (go === 'pharma'){
-      if (state.session) showScreen('pharma-app');
-      else showScreen('pharma-auth');
-    } else if (go === 'about' || go === 'contact'){
-      showScreen('about');
-    }
-  });
-});
-
-/* Drawer */
-const drawer = document.getElementById('drawer');
-const drawerOverlay = document.getElementById('drawerOverlay');
-document.getElementById('menuBtn').addEventListener('click', () => {
-  drawer.classList.add('show');
-  drawerOverlay.classList.add('show');
-});
-function fermerDrawer(){
-  drawer.classList.remove('show');
-  drawerOverlay.classList.remove('show');
-}
-drawerOverlay.addEventListener('click', fermerDrawer);
-
-/* ============================================================
-   INITIALISATION
-   ============================================================ */
-window.addEventListener('DOMContentLoaded', async () => {
-  showScreen('client');
-  initPatient();
-  initPharmaAuth();
-
-  // Restaurer une session pharmacie existante
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session && session.user){
-    const { data: ph } = await supabase
-      .from('pharmacies')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
-    if (ph) state.session = ph;
-  }
-});
-
-/* ============================================================
-   ====================  ESPACE CLIENT  =======================
-   ============================================================ */
-const mainPatient = document.getElementById('mainPatient');
-const searchEl = document.getElementById('search');
-const locBar = document.getElementById('locBar');
-const locTxt = document.getElementById('locTxt');
-const locBtn = document.getElementById('locBtn');
-
-function initPatient(){
-  afficherAccueilPatient();
-
-  searchEl.addEventListener('input', (e) => {
-    state.query = e.target.value.trim().toLowerCase();
-    afficherSuggestions();
-    if (state.query.length >= 2 && state.userPos) chercher();
-  });
-
-  locBtn.addEventListener('click', geolocate);
-
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-wrap')){
-      document.getElementById('suggestions').classList.remove('show');
-    }
-  });
-
-  setTimeout(() => { if (navigator.geolocation) geolocate(); }, 500);
-}
-
-function afficherAccueilPatient(){
-  mainPatient.innerHTML = `
-    <div class="welcome">
-      <div class="icon">💊</div>
-      <h2>Comment ça marche ?</h2>
-      <p>Trouvez le médicament le plus proche de vous en quelques secondes.</p>
-      <div class="steps">
-        <div class="step"><div class="num">1</div><div class="txt"><b>Activez votre position</b><br>Pour trouver les pharmacies autour de vous.</div></div>
-        <div class="step"><div class="num">2</div><div class="txt"><b>Tapez votre médicament</b><br>Nom commercial ou molécule.</div></div>
-        <div class="step"><div class="num">3</div><div class="txt"><b>On vous montre LA plus proche</b><br>Celle qui a votre médicament, à côté de chez vous.</div></div>
-        <div class="step"><div class="num">4</div><div class="txt"><b>Commandez ou appelez</b><br>Réservez votre boîte en un clic.</div></div>
-      </div>
-    </div>`;
-}
-
-/* --- Suggestions depuis Supabase --- */
-async function afficherSuggestions(){
-  const q = state.query;
-  const box = document.getElementById('suggestions');
-  if (q.length < 2){ box.classList.remove('show'); return; }
-
-  const { data, error } = await supabase
-    .from('stocks')
-    .select('nom, dci, ordonnance')
-    .gt('qte', 0)
-    .eq('visible', true)
-    .ilike('nom', `%${q}%`)
-    .limit(8);
-
-  if (error || !data || !data.length){ box.classList.remove('show'); return; }
-
-  // Dédupliquer par nom
-  const vus = new Set();
-  const uniques = data.filter(m => {
-    const k = m.nom.toLowerCase();
-    if (vus.has(k)) return false;
-    vus.add(k); return true;
-  }).slice(0, 6);
-
-  box.innerHTML = uniques.map(m => `
-    <div class="sugg-item" onclick="choisirMedicament(${JSON.stringify(m.nom).replace(/"/g,'&quot;')})">
-      <span>${m.nom}</span>
-      ${m.ordonnance ? '<small>📋 Ordonnance</small>' : ''}
-    </div>
-  `).join('');
-  box.classList.add('show');
-}
-
-window.choisirMedicament = function(nom){
-  searchEl.value = nom;
-  state.query = nom.toLowerCase();
-  document.getElementById('suggestions').classList.remove('show');
-  if (state.userPos) chercher();
-};
-
-/* --- Géolocalisation --- */
-function geolocate(){
-  locTxt.textContent = 'Recherche de votre position...';
-  if (!navigator.geolocation){
-    locTxt.textContent = 'Géolocalisation non supportée';
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      state.userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      locBar.classList.add('ready');
-      locTxt.textContent = 'Position activée ✓';
-      locBtn.style.display = 'none';
-      toast('Position détectée');
-      if (state.query.length >= 2) chercher();
-    },
-    () => {
-      locTxt.textContent = 'Localisation refusée';
-      locBtn.textContent = 'Réessayer';
-    },
-    { enableHighAccuracy:true, timeout:10000, maximumAge:60000 }
+// ============================================================
+// SUPABASE
+// ============================================================
+var sb = null;
+try {
+  sb = window.supabase.createClient(
+    'https://zijtchbikewjduyddftg.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppanRjaGJpa2V3amR1eWRkZnRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxOTk2MjMsImV4cCI6MjEwNTc3NTYyM30.PNStNlu3Gs5sY1l4qdxIBBKjHd8QTwE8Iq7k8pOdT8M'
   );
-}
+  console.log('Supabase OK');
+} catch(e){ console.error('Supabase KO', e); }
 
-/* --- Distance --- */
-function distanceKm(a, b){
-  const R = 6371;
-  const dLat = (b.lat - a.lat) * Math.PI/180;
-  const dLng = (b.lng - a.lng) * Math.PI/180;
-  const la1 = a.lat * Math.PI/180;
-  const la2 = b.lat * Math.PI/180;
-  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-function formatDistance(km){
-  if (km < 1) return Math.round(km*1000) + ' m';
-  if (km < 10) return km.toFixed(1) + ' km';
-  return Math.round(km) + ' km';
-}
-function tempsTrajet(km){
-  const min = Math.round(km / 25 * 60);
-  if (min < 1) return '< 1 min';
-  if (min < 60) return min + ' min';
-  const h = Math.floor(min/60), m = min%60;
-  return h + 'h' + (m?m:'');
-}
-function estOuvert(p){
-  const h = new Date().getHours();
-  if (p.ouv === 0 && p.ferm === 24) return true;
-  return h >= p.ouv && h < p.ferm;
-}
+var userPos = null;
+var session = null;
+var gpsReg = null;
+var mapReg = null;
+var mapRegMarker = null;
 
-/* --- Recherche --- */
-async function chercher(){
-  if (!state.query || state.query.length < 2 || !state.userPos) return;
+// ============================================================
+// NAVIGATION
+// ============================================================
+function openDrawer(){ document.getElementById('drawer').classList.add('on'); document.getElementById('ov').classList.add('on'); }
+function closeDrawer(){ document.getElementById('drawer').classList.remove('on'); document.getElementById('ov').classList.remove('on'); }
 
-  mainPatient.innerHTML = `<div class="loading"><div class="spinner"></div><p>Recherche de la pharmacie la plus proche...</p></div>`;
-
-  const { data, error } = await supabase
-    .from('stocks')
-    .select(`
-      id, nom, dci, forme, prix, qte, ordonnance,
-      pharmacie_id,
-      pharmacies ( id, nom, adresse, tel, lat, lng, garde, delivery, note, ouv, ferm )
-    `)
-    .gt('qte', 0)
-    .eq('visible', true)
-    .ilike('nom', `%${state.query}%`);
-
-  if (error){
-    mainPatient.innerHTML = `
-      <div class="empty">
-        <div class="icon">⚠️</div>
-        <h3>Erreur de connexion</h3>
-        <p>${error.message}</p>
-      </div>`;
-    return;
-  }
-
-  if (!data || !data.length){
-    mainPatient.innerHTML = `
-      <div class="empty">
-        <div class="icon">🔍</div>
-        <h3>Médicament non trouvé</h3>
-        <p>Aucune pharmacie partenaire n'a ce médicament en stock.</p>
-        <p class="hint">💡 Essayez le nom générique (DCI).</p>
-      </div>`;
-    return;
-  }
-
-  // Calculer les distances et trier
-  const enrichis = data
-    .filter(row => row.pharmacies)
-    .map(row => ({
-      ...row,
-      distance: distanceKm(state.userPos, {
-        lat: row.pharmacies.lat,
-        lng: row.pharmacies.lng
-      })
-    }))
-    .sort((a,b) => a.distance - b.distance);
-
-  if (!enrichis.length){
-    mainPatient.innerHTML = `<div class="empty"><p>Aucune pharmacie valide.</p></div>`;
-    return;
-  }
-
-  const best = enrichis[0];
-
-  state.result = {
-    id: best.pharmacies.id,
-    nom: best.pharmacies.nom,
-    adresse: best.pharmacies.adresse,
-    tel: best.pharmacies.tel,
-    lat: best.pharmacies.lat,
-    lng: best.pharmacies.lng,
-    garde: best.pharmacies.garde,
-    delivery: best.pharmacies.delivery,
-    note: best.pharmacies.note,
-    ouv: best.pharmacies.ouv,
-    ferm: best.pharmacies.ferm,
-    distance: best.distance,
-    ouvert: estOuvert(best.pharmacies),
-    med: {
-      id: best.id,
-      nom: best.nom,
-      prix: best.prix,
-      qte: best.qte,
-      ordonnance: best.ordonnance
+function go(name){
+  closeDrawer();
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+  if (name === 'client'){
+    document.getElementById('s-client').classList.add('on');
+    document.getElementById('hSub').style.display = 'block';
+    document.getElementById('hSearch').style.display = 'block';
+  } else if (name === 'pharma'){
+    document.getElementById('hSub').style.display = 'none';
+    document.getElementById('hSearch').style.display = 'none';
+    if (session){
+      document.getElementById('s-dash').classList.add('on');
+      loadDashboard();
+    } else {
+      document.getElementById('s-auth').classList.add('on');
     }
-  };
-
-  afficherResultat(state.result);
+  } else {
+    document.getElementById('hSub').style.display = 'none';
+    document.getElementById('hSearch').style.display = 'none';
+    document.getElementById('s-about').classList.add('on');
+  }
+  window.scrollTo(0,0);
 }
 
-/* --- Affichage résultat --- */
-function afficherResultat(p){
-  const med = p.med;
-  const dist = formatDistance(p.distance);
-  const temps = tempsTrajet(p.distance);
+// ============================================================
+// TOAST
+// ============================================================
+var toastT;
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){ t.classList.remove('on'); }, 2800);
+}
 
-  mainPatient.innerHTML = `
-    <div class="result-card">
-      <div class="result-header">
-        <div class="result-label">Médicament trouvé</div>
-        <div class="result-med">${med.nom}</div>
-        <div class="result-forme">${med.ordonnance ? '📋 Ordonnance requise' : '✓ Disponible sans ordonnance'}</div>
-      </div>
-      <div id="miniMap"></div>
-      <div class="result-body">
-        <div class="result-label" style="color:var(--texte-doux);">Pharmacie la plus proche</div>
-        <div class="ph-name">${p.nom}</div>
-        <div class="ph-addr">📍 ${p.adresse}<br>📞 ${p.tel}</div>
-        <div class="stat-row">
-          <div class="stat"><div class="val">${dist}</div><div class="lbl">Distance</div></div>
-          <div class="stat"><div class="val">${temps}</div><div class="lbl">En voiture</div></div>
-          <div class="stat"><div class="val">${p.note || '—'}</div><div class="lbl">Note</div></div>
-        </div>
-        <div class="status">
-          ${p.ouvert ? '<span class="tag ok">● Ouvert maintenant</span>' : '<span class="tag ferme">● Fermé</span>'}
-          ${p.garde ? '<span class="tag garde">🌙 De garde</span>' : ''}
-          ${p.delivery ? '<span class="tag ok">🛵 Livraison</span>' : ''}
-          <span class="tag ok">Stock : ${med.qte} boîtes</span>
-        </div>
-        <div class="price-box">
-          <div class="lbl">Prix</div>
-          <div class="val">${med.prix} FCFA</div>
-        </div>
-        <div class="actions">
-          <button class="btn-primary" onclick="ouvrirCommande()">Commander ici</button>
-          <div class="btn-row">
-            <button class="btn-secondary" onclick="appeler()">📞 Appeler</button>
-            <button class="btn-secondary" onclick="itineraire()">🧭 Itinéraire</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+// ============================================================
+// GEOLOCALISATION
+// ============================================================
+function getPos(){
+  if (!navigator.geolocation){ toast('GPS non supporté'); return; }
+  toast('Recherche de votre position...');
+  navigator.geolocation.getCurrentPosition(function(p){
+    userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
+    toast('✅ Position détectée');
+    if (document.getElementById('search').value.length >= 2) search();
+  }, function(){
+    toast('❌ Localisation refusée');
+  }, { enableHighAccuracy:true, timeout:10000 });
+}
 
-  setTimeout(() => {
-    const map = L.map('miniMap', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false }).setView([p.lat, p.lng], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
-    L.marker([p.lat, p.lng]).addTo(map);
-    if (state.userPos){
-      L.circleMarker([state.userPos.lat, state.userPos.lng], { radius:7, color:'#fff', weight:3, fillColor:'#2563eb', fillOpacity:1 }).addTo(map);
-      const bounds = L.latLngBounds([[p.lat, p.lng],[state.userPos.lat, state.userPos.lng]]);
-      map.fitBounds(bounds, { padding:[30,30] });
+// ============================================================
+// RECHERCHE
+// ============================================================
+document.getElementById('search').addEventListener('input', function(){
+  if (this.value.length >= 2 && userPos) search();
+});
+
+async function search(){
+  var q = document.getElementById('search').value.trim().toLowerCase();
+  if (!q || !userPos || !sb){ return; }
+  var el = document.getElementById('result');
+  el.innerHTML = '<div class="load">Recherche...</div>';
+
+  var r = await sb.from('stocks')
+    .select('id,nom,prix,qte,ordonnance,pharmacie_id,pharmacies(id,nom,adresse,tel,lat,lng,garde,delivery,ouv,ferm)')
+    .gt('qte', 0).eq('visible', true).ilike('nom', '%' + q + '%');
+
+  if (r.error){ el.innerHTML = '<div class="card" style="color:#d64545">Erreur : ' + r.error.message + '</div>'; return; }
+  if (!r.data || !r.data.length){
+    el.innerHTML = '<div class="card" style="text-align:center;padding:30px"><div style="font-size:40px">🔍</div><p style="margin-top:8px;color:#5a6b65">Aucune pharmacie n\'a ce médicament.</p></div>';
+    return;
+  }
+
+  var list = r.data.filter(function(x){ return x.pharmacies; }).map(function(x){
+    var p = x.pharmacies;
+    var R = 6371;
+    var dLat = (p.lat - userPos.lat) * Math.PI / 180;
+    var dLng = (p.lng - userPos.lng) * Math.PI / 180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(userPos.lat*Math.PI/180)*Math.cos(p.lat*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    var d = 2 * R * Math.asin(Math.sqrt(a));
+    return { med:x, ph:p, dist:d };
+  }).sort(function(a,b){ return a.dist - b.dist; });
+
+  var best = list[0];
+  var km = best.dist < 1 ? Math.round(best.dist*1000) + ' m' : best.dist.toFixed(1) + ' km';
+  var h = new Date().getHours();
+  var ouvert = (best.ph.ouv === 0 && best.ph.ferm === 24) || (h >= best.ph.ouv && h < best.ph.ferm);
+
+  el.innerHTML =
+    '<div class="res">' +
+      '<div class="res-h"><div style="font-size:11px;opacity:.85;text-transform:uppercase">Médicament trouvé</div>' +
+      '<b>' + best.med.nom + '</b>' +
+      '<div style="font-size:13px;opacity:.9;margin-top:4px">' + (best.med.ordonnance ? '📋 Ordonnance requise' : '✓ Sans ordonnance') + '</div></div>' +
+      '<div id="map"></div>' +
+      '<div class="res-b">' +
+        '<div style="font-size:11px;color:#5a6b65;text-transform:uppercase;margin-bottom:6px">Pharmacie la plus proche</div>' +
+        '<b style="font-size:17px;display:block;margin-bottom:6px">' + best.ph.nom + '</b>' +
+        '<div style="font-size:13px;color:#5a6b65;line-height:1.5;margin-bottom:12px">📍 ' + best.ph.adresse + '<br>📞 ' + best.ph.tel + '</div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+          '<div class="card" style="flex:1;text-align:center;padding:10px;margin:0"><b style="color:#0a7d5a">' + km + '</b><br><small style="font-size:10px;color:#5a6b65">Distance</small></div>' +
+          '<div class="card" style="flex:1;text-align:center;padding:10px;margin:0"><b style="color:#0a7d5a">' + Math.round(best.dist/25*60) + ' min</b><br><small style="font-size:10px;color:#5a6b65">Trajet</small></div>' +
+          '<div class="card" style="flex:1;text-align:center;padding:10px;margin:0"><b style="color:#0a7d5a">' + best.med.qte + '</b><br><small style="font-size:10px;color:#5a6b65">En stock</small></div>' +
+        '</div>' +
+        '<div style="margin-bottom:14px">' +
+          (ouvert ? '<span class="tag">● Ouvert</span>' : '<span class="tag" style="background:#fde8e8;color:#d64545">● Fermé</span>') +
+          (best.ph.garde ? '<span class="tag" style="background:#fff3d6;color:#8a5a00">🌙 De garde</span>' : '') +
+          (best.ph.delivery ? '<span class="tag">🛵 Livraison</span>' : '') +
+        '</div>' +
+        '<div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span>Prix</span><span class="price">' + best.med.prix + ' FCFA</span></div>' +
+        '<button class="btn" onclick="order(\'' + best.ph.id + '\',\'' + best.med.id + '\',\'' + best.med.nom.replace(/'/g,"\\'") + '\',' + best.med.prix + ')">Commander</button>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button class="btn sec" onclick="window.location.href=\'tel:' + best.ph.tel.replace(/\s/g,'') + '\'">📞 Appeler</button>' +
+          '<button class="btn sec" onclick="window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + best.ph.lat + ',' + best.ph.lng + '\')">🧭 Itinéraire</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  setTimeout(function(){
+    if (typeof L === 'undefined') return;
+    var map = L.map('map', { zoomControl:false, attributionControl:false, dragging:false }).setView([best.ph.lat, best.ph.lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.marker([best.ph.lat, best.ph.lng]).addTo(map);
+    if (userPos){
+      L.circleMarker([userPos.lat, userPos.lng], {radius:6, color:'#fff', weight:3, fillColor:'#2563eb', fillOpacity:1}).addTo(map);
+      map.fitBounds([[best.ph.lat,best.ph.lng],[userPos.lat,userPos.lng]], {padding:[30,30]});
     }
   }, 100);
 }
 
-window.appeler = function(){
-  if (!state.result) return;
-  window.location.href = 'tel:' + state.result.tel.replace(/\s/g, '');
-};
-window.itineraire = function(){
-  if (!state.result) return;
-  const p = state.result;
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`, '_blank');
-};
-
-/* --- Commande --- */
-const overlay = document.getElementById('overlay');
-const modalContent = document.getElementById('modalContent');
-
-window.ouvrirCommande = function(){
-  const p = state.result;
-  if (!p) return;
-  const med = p.med;
-  const livraison = p.delivery ? 1000 : 0;
-
-  modalContent.innerHTML = `
-    <h2>Commander</h2>
-    <div class="sub">${p.nom} — ${formatDistance(p.distance)}</div>
-    <div class="order-line"><span class="lbl">Médicament</span><span>${med.nom}</span></div>
-    <div class="order-line"><span class="lbl">Quantité</span><span>1 boîte</span></div>
-    <div class="order-line"><span class="lbl">Prix</span><span>${med.prix} FCFA</span></div>
-    ${med.ordonnance ? `<div style="background:#fff3d6;color:#8a5a00;padding:10px 12px;border-radius:9px;font-size:12.5px;margin:12px 0;">⚠️ Ordonnance requise à présenter.</div>` : ''}
-    <div class="field" style="margin-top:14px;">
-      <label>Votre numéro de téléphone</label>
-      <input type="tel" id="ordTel" placeholder="+221 77 123 45 67" />
-    </div>
-    <div style="font-size:13px;color:var(--texte-doux);margin-top:8px;">Mode de récupération</div>
-    <div class="choix" id="choixMode">
-      <button class="active" data-mode="retrait">🏥 Retrait</button>
-      ${p.delivery ? `<button data-mode="livraison">🛵 Livraison (+${livraison})</button>` : ''}
-    </div>
-    <div class="order-total"><span>Total</span><span id="total">${med.prix} FCFA</span></div>
-    <button class="btn-main" id="confirmBtn">Confirmer la commande</button>
-    <button class="btn-close" id="closeBtn">Annuler</button>
-  `;
-  overlay.classList.add('show');
-
-  let mode = 'retrait';
-  document.querySelectorAll('#choixMode button').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('#choixMode button').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      mode = b.dataset.mode;
-      const total = mode === 'livraison' ? med.prix + livraison : med.prix;
-      document.getElementById('total').textContent = total + ' FCFA';
-    });
+// ============================================================
+// COMMANDE
+// ============================================================
+async function order(phId, stockId, medNom, prix){
+  var tel = prompt('Votre numéro de téléphone :');
+  if (!tel){ return; }
+  var code = 'PP-' + Math.random().toString(36).slice(2,7).toUpperCase();
+  var r = await sb.from('commandes').insert({
+    code: code, pharmacie_id: phId, stock_id: stockId,
+    medicament: medNom, patient_tel: tel, mode: 'retrait',
+    total: prix, statut: 'en_attente'
   });
-
-  document.getElementById('closeBtn').onclick = fermerModal;
-  document.getElementById('confirmBtn').onclick = async () => {
-    const tel = document.getElementById('ordTel').value.trim();
-    if (!tel){ toast('Entrez votre numéro'); return; }
-    const total = mode === 'livraison' ? med.prix + livraison : med.prix;
-    const code = 'PP-' + Math.random().toString(36).slice(2,7).toUpperCase();
-
-    const { error: cmdErr } = await supabase.from('commandes').insert({
-      code,
-      pharmacie_id: p.id,
-      stock_id: med.id,
-      medicament: med.nom,
-      patient_tel: tel,
-      mode: mode,
-      total: total,
-      statut: 'en_attente'
-    });
-
-    if (cmdErr){
-      toast('Erreur : ' + cmdErr.message);
-      return;
-    }
-
-    modalContent.innerHTML = `
-      <div class="success">
-        <div class="check">✓</div>
-        <h3>Commande envoyée !</h3>
-        <p><b>${p.nom}</b> a reçu votre commande.</p>
-        <p>${med.nom} — ${mode === 'livraison' ? 'Livraison' : 'Retrait'}</p>
-        <p>Total : <b>${total} FCFA</b></p>
-        <div class="code">${code}</div>
-        <p style="font-size:12.5px;">Présentez ce code à la pharmacie.</p>
-        <button class="btn-main" style="margin-top:20px;" onclick="fermerModal()">Terminé</button>
-      </div>`;
-  };
-};
-
-function fermerModal(){
-  overlay.classList.remove('show');
-  modalContent.innerHTML = '';
+  if (r.error){ toast('Erreur : ' + r.error.message); return; }
+  alert('✅ Commande envoyée !\nCode : ' + code + '\nPrésentez ce code à la pharmacie.');
 }
-overlay.addEventListener('click', (e) => { if (e.target === overlay) fermerModal(); });
 
-/* ============================================================
-   ====================  ESPACE PHARMACIE  ====================
-   ============================================================ */
-function initPharmaAuth(){
-  document.getElementById('tabLogin').onclick = () => {
-    document.getElementById('tabLogin').classList.add('active');
-    document.getElementById('tabRegister').classList.remove('active');
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-  };
-  document.getElementById('tabRegister').onclick = () => {
-    document.getElementById('tabRegister').classList.add('active');
-    document.getElementById('tabLogin').classList.remove('active');
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registerForm').style.display = 'block';
-    initMapReg();
-  };
-  document.getElementById('goRegister').onclick = () => document.getElementById('tabRegister').click();
-  document.getElementById('goLogin').onclick = () => document.getElementById('tabLogin').click();
-  document.getElementById('btnLogin').onclick = doLogin;
-  document.getElementById('btnRegister').onclick = doRegister;
-  document.getElementById('btnLogout').onclick = async () => {
-    if (!confirm('Se déconnecter ?')) return;
-    await supabase.auth.signOut();
-    state.session = null;
-    showScreen('client');
-    toast('Déconnecté');
-  };
+// ============================================================
+// AUTH PHARMACIE
+// ============================================================
+function authTab(w){
+  var tL = document.getElementById('tLogin'), tR = document.getElementById('tReg');
+  var fL = document.getElementById('fLogin'), fR = document.getElementById('fReg');
+  if (w === 'login'){ tL.classList.add('on'); tR.classList.remove('on'); fL.style.display='block'; fR.style.display='none'; }
+  else { tR.classList.add('on'); tL.classList.remove('on'); fL.style.display='none'; fR.style.display='block'; setTimeout(initMapReg, 200); }
 }
 
 function initMapReg(){
-  if (state.regMap) return;
-  setTimeout(() => {
-    state.regMap = L.map('gpsMapReg').setView([14.6928, -17.4467], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(state.regMap);
-    state.regMap.on('click', (e) => {
-      state.gpsReg = { lat: e.latlng.lat, lng: e.latlng.lng };
-      if (state.regMarker) state.regMap.removeLayer(state.regMarker);
-      state.regMarker = L.marker([state.gpsReg.lat, state.gpsReg.lng]).addTo(state.regMap);
-      document.getElementById('gpsHelp').innerHTML = `📍 Position : ${state.gpsReg.lat.toFixed(4)}, ${state.gpsReg.lng.toFixed(4)}`;
-    });
-    if (navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(pos => {
-        state.regMap.setView([pos.coords.latitude, pos.coords.longitude], 14);
-      }, ()=>{}, {timeout:5000});
-    }
-  }, 150);
+  if (mapReg || typeof L === 'undefined') return;
+  mapReg = L.map('mapReg').setView([14.6928, -17.4467], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapReg);
+  mapReg.on('click', function(e){
+    gpsReg = { lat: e.latlng.lat, lng: e.latlng.lng };
+    if (mapRegMarker) mapReg.removeLayer(mapRegMarker);
+    mapRegMarker = L.marker([gpsReg.lat, gpsReg.lng]).addTo(mapReg);
+    document.getElementById('gpsInfo').innerHTML = '📍 ' + gpsReg.lat.toFixed(4) + ', ' + gpsReg.lng.toFixed(4);
+  });
+  if (navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(p){ mapReg.setView([p.coords.latitude, p.coords.longitude], 14); }, function(){}, {timeout:5000});
+  }
 }
 
 async function doLogin(){
-  const tel = document.getElementById('loginTel').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  if (!tel || !pass){ toast('Remplissez tous les champs'); return; }
-
-  const email = phoneToEmail(tel);
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-
-  if (error){ toast('Téléphone ou mot de passe incorrect'); return; }
-
-  const { data: ph, error: phErr } = await supabase
-    .from('pharmacies')
-    .select('*')
-    .eq('id', data.user.id)
-    .single();
-
-  if (phErr || !ph){ toast('Profil pharmacie introuvable'); return; }
-
-  state.session = ph;
-  await afficherAppPharmacie();
-  showScreen('pharma-app');
-  toast('Bienvenue ' + ph.nom);
+  if (!sb){ toast('Service indisponible'); return; }
+  var tel = document.getElementById('lTel').value.trim();
+  var pass = document.getElementById('lPass').value;
+  if (!tel || !pass){ toast('Remplissez les champs'); return; }
+  var email = tel.replace(/[^0-9]/g,'') + '@pharmacie.local';
+  var r = await sb.auth.signInWithPassword({ email: email, password: pass });
+  if (r.error){ toast('Identifiants incorrects'); return; }
+  var p = await sb.from('pharmacies').select('*').eq('id', r.data.user.id).single();
+  if (p.error || !p.data){ toast('Profil introuvable'); return; }
+  session = p.data;
+  go('pharma');
+  toast('Bienvenue ' + session.nom);
 }
 
 async function doRegister(){
-  const nom = document.getElementById('regNom').value.trim();
-  const licence = document.getElementById('regLicence').value.trim();
-  const tel = document.getElementById('regTel').value.trim();
-  const pass = document.getElementById('regPass').value;
-  const adresse = document.getElementById('regAdresse').value.trim();
-
-  if (!nom || !tel || !pass || !adresse){ toast('Remplissez les champs obligatoires'); return; }
-  if (pass.length < 6){ toast('Mot de passe : 6 caractères min'); return; }
-  if (!state.gpsReg){ toast('Cliquez sur la carte pour placer votre pharmacie'); return; }
-
-  const email = phoneToEmail(tel);
-
-  // 1. Créer le compte Auth
-  const { data: auth, error: authErr } = await supabase.auth.signUp({ email, password: pass });
-  if (authErr){ toast(authErr.message); return; }
-  if (!auth.user){ toast('Erreur : compte non créé'); return; }
-
-  // 2. Créer la fiche pharmacie
-  const { error: dbErr } = await supabase.from('pharmacies').insert({
-    id: auth.user.id,
-    nom, licence: licence || null, tel, adresse,
-    lat: state.gpsReg.lat,
-    lng: state.gpsReg.lng
+  if (!sb){ toast('Service indisponible'); return; }
+  var nom = document.getElementById('rNom').value.trim();
+  var tel = document.getElementById('rTel').value.trim();
+  var pass = document.getElementById('rPass').value;
+  var addr = document.getElementById('rAddr').value.trim();
+  if (!nom || !tel || !pass || !addr){ toast('Remplissez les champs'); return; }
+  if (pass.length < 6){ toast('Mot de passe : 6 car. min'); return; }
+  if (!gpsReg){ toast('Cliquez sur la carte pour votre position'); return; }
+  var email = tel.replace(/[^0-9]/g,'') + '@pharmacie.local';
+  var a = await sb.auth.signUp({ email: email, password: pass });
+  if (a.error){ toast(a.error.message); return; }
+  if (!a.data.user){ toast('Compte non créé'); return; }
+  var ins = await sb.from('pharmacies').insert({
+    id: a.data.user.id, nom: nom, tel: tel, adresse: addr,
+    lat: gpsReg.lat, lng: gpsReg.lng
   });
-
-  if (dbErr){ toast('Erreur : ' + dbErr.message); return; }
-
-  // 3. Charger le profil
-  const { data: ph } = await supabase
-    .from('pharmacies')
-    .select('*')
-    .eq('id', auth.user.id)
-    .single();
-
-  state.session = ph;
-  await afficherAppPharmacie();
-  showScreen('pharma-app');
+  if (ins.error){ toast('Erreur : ' + ins.error.message); return; }
+  var p = await sb.from('pharmacies').select('*').eq('id', a.data.user.id).single();
+  session = p.data;
+  go('pharma');
   toast('Pharmacie créée 🎉');
 }
 
-/* --- Dashboard pharmacie --- */
-async function afficherAppPharmacie(){
-  document.getElementById('hPhName').textContent = state.session.nom;
-  document.getElementById('hPhSub').textContent = state.session.adresse;
-
-  await chargerStock();
-
-  document.querySelectorAll('#screen-pharma-app .tab').forEach(t => {
-    t.onclick = async () => {
-      document.querySelectorAll('#screen-pharma-app .tab').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      state.currentTab = t.dataset.tab;
-      await renderTabPharma();
-    };
-  });
-  await renderTabPharma();
+async function logout(){
+  if (!confirm('Se déconnecter ?')) return;
+  if (sb) await sb.auth.signOut();
+  session = null;
+  go('client');
+  toast('Déconnecté');
 }
 
-async function chargerStock(){
-  const { data, error } = await supabase
-    .from('stocks')
-    .select('*')
-    .eq('pharmacie_id', state.session.id)
-    .order('nom');
-
-  if (error){ state.session.inventaire = []; return; }
-  state.session.inventaire = data || [];
+// ============================================================
+// DASHBOARD PHARMACIE
+// ============================================================
+function dashTab(t){
+  document.querySelectorAll('#s-dash .tab').forEach(function(x){ x.classList.remove('on'); });
+  if (t === 'dash') document.getElementById('tDash').classList.add('on');
+  if (t === 'add') document.getElementById('tAdd').classList.add('on');
+  if (t === 'ord') document.getElementById('tOrd').classList.add('on');
+  loadDashboard(t);
 }
 
-async function renderTabPharma(){
-  const el = document.getElementById('content');
-  switch(state.currentTab){
-    case 'dashboard': el.innerHTML = renderDashboard(); break;
-    case 'stock': el.innerHTML = await renderStock(); bindStock(); break;
-    case 'add': el.innerHTML = renderAdd(); bindAdd(); break;
-    case 'orders': el.innerHTML = await renderOrders(); break;
-    case 'profil': el.innerHTML = renderProfil(); bindProfil(); break;
-    case 'guide': el.innerHTML = renderGuide(); break;
-  }
-  await updateOrdBadge();
-}
+async function loadDashboard(tab){
+  tab = tab || 'dash';
+  if (!session || !sb) return;
+  document.getElementById('dName').textContent = session.nom;
+  document.getElementById('dAddr').textContent = session.adresse;
+  var el = document.getElementById('dashContent');
 
-function renderDashboard(){
-  const inv = state.session.inventaire || [];
-  const totalQte = inv.reduce((s,x) => s + x.qte, 0);
-  const valeur = inv.reduce((s,x) => s + x.qte * x.prix, 0);
-  const rupture = inv.filter(x => x.qte === 0).length;
-  const faible = inv.filter(x => x.qte > 0 && x.qte <= (x.seuil || 10)).length;
-
-  return `
-    <div class="stats">
-      <div class="stat-box"><div class="val">${inv.length}</div><div class="lbl">Références</div></div>
-      <div class="stat-box"><div class="val">${totalQte}</div><div class="lbl">Boîtes en stock</div></div>
-      <div class="stat-box ${faible?'warn':''}"><div class="val">${faible}</div><div class="lbl">Stock faible</div></div>
-      <div class="stat-box ${rupture?'danger':''}"><div class="val">${rupture}</div><div class="lbl">En rupture</div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">💰 Valeur du stock</div>
-      <div style="font-size:26px;font-weight:700;color:var(--vert);">${valeur.toLocaleString('fr-FR')} FCFA</div>
-    </div>
-    <div class="card">
-      <div class="card-title">⚡ Actions rapides</div>
-      <button class="btn-primary" style="margin-bottom:10px;" onclick="switchTabPharma('add')">➕ Ajouter un médicament</button>
-      <button class="btn-secondary" onclick="switchTabPharma('stock')">📦 Voir mes stocks</button>
-    </div>
-  `;
-}
-
-window.switchTabPharma = async function(tab){
-  state.currentTab = tab;
-  document.querySelectorAll('#screen-pharma-app .tab').forEach(x => {
-    x.classList.toggle('active', x.dataset.tab === tab);
-  });
-  await renderTabPharma();
-};
-
-async function renderStock(){
-  await chargerStock();
-  const inv = [...(state.session.inventaire || [])];
-
-  if (!inv.length){
-    return `
-      <div class="empty">
-        <div class="icon">💊</div>
-        <h3>Aucun médicament en stock</h3>
-        <p>Ajoutez vos premiers médicaments.</p>
-        <button class="btn-primary" onclick="switchTabPharma('add')">➕ Ajouter</button>
-      </div>`;
-  }
-
-  inv.sort((a,b) => {
-    const sc = x => x.qte === 0 ? 0 : x.qte <= (x.seuil||10) ? 1 : 2;
-    return sc(a) - sc(b) || a.nom.localeCompare(b.nom);
-  });
-
-  const liste = inv.map(p => {
-    const cls = p.qte === 0 ? 'out' : p.qte <= (p.seuil||10) ? 'low' : '';
-    return `
-      <div class="product ${cls}">
-        <div class="prod-info">
-          <div class="prod-name">${p.nom}</div>
-          <div class="prod-meta">
-            ${p.dci ? `<span>${p.dci}</span>` : ''}
-            ${p.forme ? `<span>• ${p.forme}</span>` : ''}
-            ${p.ordonnance ? '<span>• 📋 Ordonnance</span>' : ''}
-          </div>
-          <div class="prod-price" style="margin-top:5px;">${p.prix} FCFA</div>
-        </div>
-        <div class="prod-qty ${cls}">${p.qte}<br><span style="font-size:9px;font-weight:400;">boîtes</span></div>
-        <div class="prod-actions">
-          <button class="icon-btn" onclick="editProd('${p.id}')">✏️</button>
-        </div>
-      </div>`;
-  }).join('');
-
-  const total = inv.reduce((s,x) => s + x.qte*x.prix, 0);
-
-  return `
-    <div class="quick-search">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input type="text" id="stockSearch" placeholder="Rechercher dans mon stock..." />
-    </div>
-    <div style="font-size:12px;color:var(--texte-doux);text-align:center;margin-bottom:12px;">
-      Valeur : <b style="color:var(--vert);">${total.toLocaleString('fr-FR')} FCFA</b>
-    </div>
-    <div id="stockList">${liste}</div>`;
-}
-
-function bindStock(){
-  const i = document.getElementById('stockSearch');
-  if (i) i.addEventListener('input', e => {
-    const q = e.target.value.toLowerCase();
-    document.querySelectorAll('#stockList .product').forEach(el => {
-      el.style.display = el.textContent.toLowerCase().includes(q) ? 'flex' : 'none';
-    });
-  });
-}
-
-function renderAdd(){
-  const opts = MEDS_REF.map(m => `<option value="${m.key}">${m.nom} (${m.forme})</option>`).join('');
-  return `
-    <div class="card">
-      <div class="card-title">➕ Ajouter un médicament</div>
-      <div class="field">
-        <label>Choisir dans la liste</label>
-        <select id="addRef">
-          <option value="">— Sélectionner —</option>
-          ${opts}
-          <option value="__custom">✏️ Autre (saisie manuelle)</option>
-        </select>
-      </div>
-      <div id="customFields" style="display:none;">
-        <div class="field">
-          <label>Nom *</label>
-          <input type="text" id="addNom" placeholder="Ex : Doxycycline 100 mg" />
-        </div>
-        <div class="row">
-          <div class="field"><label>DCI</label><input type="text" id="addDci" /></div>
-          <div class="field">
-            <label>Forme</label>
-            <select id="addForme">
-              <option>Comprimé</option><option>Gélule</option><option>Sirop</option>
-              <option>Injection</option><option>Pommade</option><option>Spray</option>
-              <option>Effervescent</option><option>Autre</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="field"><label>Prix (FCFA) *</label><input type="number" id="addPrix" min="0" /></div>
-        <div class="field"><label>Quantité *</label><input type="number" id="addQte" min="0" /></div>
-      </div>
-      <div class="row">
-        <div class="field"><label>Seuil d'alerte</label><input type="number" id="addSeuil" value="10" min="0" /></div>
-        <div class="field"><label>Péremption</label><input type="date" id="addPeremption" /></div>
-      </div>
-      <label class="checkbox" style="margin-bottom:12px;"><input type="checkbox" id="addOrdonnance" /> 📋 Ordonnance obligatoire</label>
-      <label class="checkbox" style="margin-bottom:16px;"><input type="checkbox" id="addVisible" checked /> 👁 Visible aux patients</label>
-      <button class="btn-primary" id="btnAddProd">Ajouter</button>
-    </div>
-  `;
-}
-
-function bindAdd(){
-  const sel = document.getElementById('addRef');
-  sel.onchange = () => {
-    document.getElementById('customFields').style.display = sel.value === '__custom' ? 'block' : 'none';
-  };
-  document.getElementById('btnAddProd').onclick = async () => {
-    let nom, dci = '', forme = '';
-    if (sel.value === '__custom'){
-      nom = document.getElementById('addNom').value.trim();
-      dci = document.getElementById('addDci').value.trim();
-      forme = document.getElementById('addForme').value;
-      if (!nom){ toast('Saisissez le nom'); return; }
-    } else if (sel.value){
-      const r = MEDS_REF.find(x => x.key === sel.value);
-      nom = r.nom; dci = r.dci; forme = r.forme;
-    } else { toast('Choisissez un médicament'); return; }
-
-    const prix = parseInt(document.getElementById('addPrix').value);
-    const qte = parseInt(document.getElementById('addQte').value);
-    const seuil = parseInt(document.getElementById('addSeuil').value) || 10;
-    const peremption = document.getElementById('addPeremption').value || null;
-    const ordonnance = document.getElementById('addOrdonnance').checked;
-    const visible = document.getElementById('addVisible').checked;
-
-    if (isNaN(prix) || prix < 0 || isNaN(qte) || qte < 0){ toast('Prix ou quantité invalide'); return; }
-
-    const { data: existing } = await supabase
-      .from('stocks')
-      .select('id')
-      .eq('pharmacie_id', state.session.id)
-      .ilike('nom', nom);
-
-    if (existing && existing.length){ toast('Déjà dans votre stock'); return; }
-
-    const { error } = await supabase.from('stocks').insert({
-      pharmacie_id: state.session.id,
-      nom, dci, forme, prix, qte, seuil, ordonnance, visible, peremption
-    });
-
-    if (error){ toast('Erreur : ' + error.message); return; }
-
-    toast('✅ Ajouté');
-    await switchTabPharma('stock');
-  };
-}
-
-window.editProd = function(id){
-  const p = state.session.inventaire.find(x => String(x.id) === String(id));
-  if (!p) return;
-  modalContent.innerHTML = `
-    <h2>${p.nom}</h2>
-    <div class="sub">Modifier</div>
-    <div class="row">
-      <div class="field"><label>Prix</label><input type="number" id="editPrix" value="${p.prix}" /></div>
-      <div class="field"><label>Quantité</label><input type="number" id="editQte" value="${p.qte}" /></div>
-    </div>
-    <div class="field"><label>Seuil d'alerte</label><input type="number" id="editSeuil" value="${p.seuil||10}" /></div>
-    <div class="field"><label>Péremption</label><input type="date" id="editPeremption" value="${p.peremption||''}" /></div>
-    <label class="checkbox" style="margin-bottom:12px;"><input type="checkbox" id="editOrdonnance" ${p.ordonnance?'checked':''} /> 📋 Ordonnance</label>
-    <label class="checkbox" style="margin-bottom:18px;"><input type="checkbox" id="editVisible" ${p.visible!==false?'checked':''} /> 👁 Visible</label>
-    <button class="btn-main" id="btnSaveEdit">Enregistrer</button>
-    <button class="btn-close" style="color:var(--rouge);" id="btnDelete">🗑 Supprimer</button>
-    <button class="btn-close" id="btnCloseModal">Annuler</button>
-  `;
-  overlay.classList.add('show');
-
-  document.getElementById('btnSaveEdit').onclick = async () => {
-    const { error } = await supabase.from('stocks').update({
-      prix: parseInt(document.getElementById('editPrix').value) || 0,
-      qte: parseInt(document.getElementById('editQte').value) || 0,
-      seuil: parseInt(document.getElementById('editSeuil').value) || 10,
-      peremption: document.getElementById('editPeremption').value || null,
-      ordonnance: document.getElementById('editOrdonnance').checked,
-      visible: document.getElementById('editVisible').checked,
-      updated_at: new Date().toISOString()
-    }).eq('id', p.id);
-
-    if (error){ toast('Erreur : ' + error.message); return; }
-    fermerModal();
-    toast('✅ Modifications enregistrées');
-    await renderTabPharma();
-  };
-
-  document.getElementById('btnDelete').onclick = async () => {
-    if (!confirm('Supprimer définitivement ?')) return;
-    const { error } = await supabase.from('stocks').delete().eq('id', p.id);
-    if (error){ toast('Erreur : ' + error.message); return; }
-    fermerModal();
-    toast('Supprimé');
-    await renderTabPharma();
-  };
-
-  document.getElementById('btnCloseModal').onclick = fermerModal;
-};
-
-async function renderOrders(){
-  const { data: orders, error } = await supabase
-    .from('commandes')
-    .select('*')
-    .eq('pharmacie_id', state.session.id)
-    .order('created_at', { ascending: false });
-
-  if (error){ return `<div class="empty"><p>Erreur : ${error.message}</p></div>`; }
-
-  if (!orders || !orders.length){
-    return `<div class="empty"><div class="icon">🛒</div><h3>Aucune commande</h3><p>Les commandes des patients apparaîtront ici.</p></div>`;
-  }
-
-  return orders.map(o => {
-    const st = o.statut || 'en_attente';
-    const badge = {
-      'en_attente':'background:#fff3d6;color:#8a5a00;',
-      'acceptee':'background:#e8f0ff;color:#1a4fbb;',
-      'prete':'background:var(--vert-clair);color:var(--vert-fonce);',
-      'refusee':'background:#fde8e8;color:var(--rouge);',
-      'livree':'background:#e2e8e6;color:var(--texte-doux);'
-    }[st] || '';
-    return `
-      <div class="card">
-        <div class="card-title">
-          <span>${o.code}</span>
-          <span style="font-size:10.5px;padding:4px 10px;border-radius:7px;${badge}">${st.replace('_',' ').toUpperCase()}</span>
-        </div>
-        <div style="font-size:13.5px;margin-bottom:6px;">${o.medicament}</div>
-        <div style="font-size:12.5px;color:var(--texte-doux);margin-bottom:10px;">📞 ${o.patient_tel} • ${o.mode === 'livraison'?'🛵 Livraison':'🏥 Retrait'}</div>
-        <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--vert);margin-bottom:10px;">
-          <span>Total</span><span>${o.total} FCFA</span>
-        </div>
-        ${st === 'en_attente' ? `
-          <div style="display:flex;gap:8px;">
-            <button class="btn-primary" style="flex:1;" onclick="changerStatut('${o.id}','acceptee')">✓ Accepter</button>
-            <button class="btn-secondary" style="flex:1;" onclick="changerStatut('${o.id}','refusee')">✕ Refuser</button>
-          </div>` : ''}
-        ${st === 'acceptee' ? `<button class="btn-primary" onclick="changerStatut('${o.id}','prete')">Marquer prête</button>` : ''}
-      </div>`;
-  }).join('');
-}
-
-window.changerStatut = async function(id, statut){
-  if (statut === 'acceptee'){
-    const { data: cmd } = await supabase
-      .from('commandes').select('stock_id').eq('id', id).single();
-
-    if (cmd && cmd.stock_id){
-      const { data: s } = await supabase
-        .from('stocks').select('qte').eq('id', cmd.stock_id).single();
-
-      if (s && s.qte > 0){
-        await supabase.from('stocks')
-          .update({ qte: s.qte - 1, updated_at: new Date().toISOString() })
-          .eq('id', cmd.stock_id);
-      }
+  if (tab === 'dash'){
+    var r = await sb.from('stocks').select('*').eq('pharmacie_id', session.id).order('nom');
+    var inv = r.data || [];
+    if (!inv.length){
+      el.innerHTML = '<div class="card" style="text-align:center;padding:30px"><div style="font-size:40px">💊</div><p style="margin-top:10px;color:#5a6b65">Aucun médicament. Ajoutez-en !</p></div>';
+      return;
     }
+    var total = inv.reduce(function(s,x){ return s + x.qte * x.prix; }, 0);
+    var html = '<div class="card"><b>💰 Valeur du stock</b><div class="price" style="margin-top:8px">' + total.toLocaleString('fr-FR') + ' FCFA</div></div>';
+    html += inv.map(function(p){
+      return '<div class="prod"><div style="flex:1"><b>' + p.nom + '</b>' +
+        '<small>' + p.prix + ' FCFA' + (p.ordonnance ? ' • 📋' : '') + '</small></div>' +
+        '<div class="qte">' + p.qte + '<br><small style="font-size:9px;color:#5a6b65">boîtes</small></div>' +
+        '<button style="background:none;border:none;font-size:18px;cursor:pointer" onclick="editStock(' + p.id + ',' + p.prix + ',' + p.qte + ')">✏️</button>' +
+      '</div>';
+    }).join('');
+    el.innerHTML = html;
   }
-
-  const { error } = await supabase
-    .from('commandes').update({ statut }).eq('id', id);
-
-  if (error){ toast('Erreur : ' + error.message); return; }
-  toast('Commande ' + statut);
-  await renderTabPharma();
-};
-
-async function updateOrdBadge(){
-  if (!state.session) return;
-  const { count } = await supabase
-    .from('commandes')
-    .select('id', { count:'exact', head:true })
-    .eq('pharmacie_id', state.session.id)
-    .eq('statut', 'en_attente');
-
-  const b = document.getElementById('ordBadge');
-  if (b){
-    b.textContent = count || 0;
-    b.style.display = (count && count > 0) ? 'inline-block' : 'none';
+  else if (tab === 'add'){
+    el.innerHTML =
+      '<div class="card"><h3>➕ Ajouter un médicament</h3>' +
+      '<div class="field"><label>Nom *</label><input id="aNom" placeholder="Ex : Paracétamol 500 mg"></div>' +
+      '<div class="field"><label>DCI</label><input id="aDci" placeholder="Ex : Paracétamol"></div>' +
+      '<div class="field"><label>Prix (FCFA) *</label><input id="aPrix" type="number" placeholder="1500"></div>' +
+      '<div class="field"><label>Quantité *</label><input id="aQte" type="number" placeholder="50"></div>' +
+      '<label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:12px"><input type="checkbox" id="aOrd"> 📋 Ordonnance obligatoire</label>' +
+      '<button class="btn" onclick="saveStock()">Ajouter</button></div>';
+  }
+  else if (tab === 'ord'){
+    var r = await sb.from('commandes').select('*').eq('pharmacie_id', session.id).order('created_at', {ascending:false});
+    var ord = r.data || [];
+    if (!ord.length){
+      el.innerHTML = '<div class="card" style="text-align:center;padding:30px"><div style="font-size:40px">🛒</div><p style="margin-top:10px;color:#5a6b65">Aucune commande.</p></div>';
+      return;
+    }
+    el.innerHTML = ord.map(function(o){
+      return '<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>' + o.code + '</b><span class="tag">' + o.statut.replace('_',' ') + '</span></div>' +
+        '<div style="font-size:14px;margin-bottom:6px">' + o.medicament + '</div>' +
+        '<div style="font-size:12px;color:#5a6b65;margin-bottom:10px">📞 ' + o.patient_tel + '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-weight:700;color:#0a7d5a;margin-bottom:10px"><span>Total</span><span>' + o.total + ' FCFA</span></div>' +
+        (o.statut === 'en_attente' ?
+          '<div style="display:flex;gap:8px"><button class="btn" style="flex:1" onclick="setStatut(' + o.id + ',\'acceptee\')">✓ Accepter</button>' +
+          '<button class="btn red" style="flex:1" onclick="setStatut(' + o.id + ',\'refusee\')">✕ Refuser</button></div>' : '') +
+      '</div>';
+    }).join('');
   }
 }
 
-function renderProfil(){
-  const s = state.session;
-  return `
-    <div class="card">
-      <div class="card-title">🏥 Informations</div>
-      <div class="field"><label>Nom</label><input id="proNom" value="${s.nom}" /></div>
-      <div class="field"><label>Licence</label><input id="proLicence" value="${s.licence||''}" /></div>
-      <div class="field"><label>Adresse</label><input id="proAdresse" value="${s.adresse}" /></div>
-      <div class="field"><label>Téléphone</label><input id="proTel" value="${s.tel}" /></div>
-    </div>
-    <div class="card">
-      <div class="card-title">🕐 Horaires</div>
-      <div class="row">
-        <div class="field"><label>Ouverture</label><input type="number" id="proOuv" value="${s.ouv}" min="0" max="23" /></div>
-        <div class="field"><label>Fermeture</label><input type="number" id="proFerm" value="${s.ferm}" min="1" max="24" /></div>
-      </div>
-      <div style="font-size:11.5px;color:var(--texte-doux);">Pour 24h/24 : 0 et 24.</div>
-    </div>
-    <div class="card">
-      <div class="card-title">🎯 Services</div>
-      <label class="checkbox" style="margin-bottom:10px;"><input type="checkbox" id="proGarde" ${s.garde?'checked':''} /> 🌙 De garde</label>
-      <label class="checkbox"><input type="checkbox" id="proDelivery" ${s.delivery?'checked':''} /> 🛵 Livraison</label>
-    </div>
-    <div class="card">
-      <div class="card-title">📍 Position GPS</div>
-      <div id="gpsMapProfil"></div>
-      <div class="help">Cliquez pour déplacer</div>
-    </div>
-    <button class="btn-primary" id="btnSaveProfil">💾 Enregistrer</button>
-  `;
+async function saveStock(){
+  var nom = document.getElementById('aNom').value.trim();
+  var dci = document.getElementById('aDci').value.trim();
+  var prix = parseInt(document.getElementById('aPrix').value);
+  var qte = parseInt(document.getElementById('aQte').value);
+  var ord = document.getElementById('aOrd').checked;
+  if (!nom || isNaN(prix) || isNaN(qte)){ toast('Remplissez nom, prix et quantité'); return; }
+  var r = await sb.from('stocks').insert({
+    pharmacie_id: session.id, nom: nom, dci: dci || null,
+    prix: prix, qte: qte, ordonnance: ord, visible: true
+  });
+  if (r.error){ toast('Erreur : ' + r.error.message); return; }
+  toast('✅ Ajouté');
+  dashTab('dash');
 }
 
-function bindProfil(){
-  setTimeout(() => {
-    const map = L.map('gpsMapProfil').setView([state.session.lat, state.session.lng], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
-    const marker = L.marker([state.session.lat, state.session.lng], {draggable:true}).addTo(map);
-    marker.on('dragend', () => {
-      const pos = marker.getLatLng();
-      state.session.lat = pos.lat; state.session.lng = pos.lng;
-    });
-    map.on('click', e => {
-      marker.setLatLng(e.latlng);
-      state.session.lat = e.latlng.lat; state.session.lng = e.latlng.lng;
-    });
-  }, 100);
-
-  document.getElementById('btnSaveProfil').onclick = async () => {
-    const updates = {
-      nom: document.getElementById('proNom').value.trim() || state.session.nom,
-      licence: document.getElementById('proLicence').value.trim(),
-      adresse: document.getElementById('proAdresse').value.trim() || state.session.adresse,
-      tel: document.getElementById('proTel').value.trim() || state.session.tel,
-      ouv: parseInt(document.getElementById('proOuv').value) || 0,
-      ferm: parseInt(document.getElementById('proFerm').value) || 24,
-      garde: document.getElementById('proGarde').checked,
-      delivery: document.getElementById('proDelivery').checked,
-      lat: state.session.lat,
-      lng: state.session.lng
-    };
-
-    const { error } = await supabase
-      .from('pharmacies').update(updates).eq('id', state.session.id);
-
-    if (error){ toast('Erreur : ' + error.message); return; }
-
-    Object.assign(state.session, updates);
-    document.getElementById('hPhName').textContent = state.session.nom;
-    document.getElementById('hPhSub').textContent = state.session.adresse;
-    toast('✅ Profil enregistré');
-  };
+async function editStock(id, prix, qte){
+  var np = prompt('Nouveau prix :', prix);
+  if (np === null) return;
+  var nq = prompt('Nouvelle quantité :', qte);
+  if (nq === null) return;
+  var r = await sb.from('stocks').update({ prix: parseInt(np), qte: parseInt(nq), updated_at: new Date().toISOString() }).eq('id', id);
+  if (r.error){ toast('Erreur'); return; }
+  toast('✅ Modifié');
+  loadDashboard('dash');
 }
 
-function renderGuide(){
-  return `
-    <div class="card">
-      <div class="card-title">❓ Comment ça marche ?</div>
-      <div class="guide-step"><div class="guide-num">1</div><div class="guide-txt"><b>Complétez votre profil</b>Vérifiez nom, adresse et position GPS.</div></div>
-      <div class="guide-step"><div class="guide-num">2</div><div class="guide-txt"><b>Ajoutez vos médicaments</b>Prix, quantité, ordonnance.</div></div>
-      <div class="guide-step"><div class="guide-num">3</div><div class="guide-txt"><b>Mettez à jour vos stocks</b>Après chaque vente, actualisez la quantité.</div></div>
-      <div class="guide-step"><div class="guide-num">4</div><div class="guide-txt"><b>Recevez les commandes</b>Acceptez ou refusez.</div></div>
-    </div>
-    <div class="card" style="background:var(--vert-clair);">
-      <div style="font-size:13.5px;line-height:1.7;color:var(--vert-fonce);">
-        💡 <b>Astuce :</b> plus vos stocks sont à jour, plus les patients vous trouvent et vous font confiance.
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📞 Support</div>
-      <div style="font-size:13.5px;line-height:1.7;">
-        <b style="color:var(--vert);">support@mapharmacie.app</b><br>
-        <b style="color:var(--vert);">+221 77 000 00 00</b>
-      </div>
-    </div>
-  `;
+async function setStatut(id, statut){
+  var r = await sb.from('commandes').update({ statut: statut }).eq('id', id);
+  if (r.error){ toast('Erreur'); return; }
+  toast('✅ ' + statut);
+  loadDashboard('ord');
 }
 
-/* ============================================================
-   TOAST
-   ============================================================ */
-let toastTimer;
-function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
-}
+// ============================================================
+// DÉMARRAGE
+// ============================================================
+window.addEventListener('DOMContentLoaded', async function(){
+  if (!sb) return;
+  var s = await sb.auth.getSession();
+  if (s.data && s.data.session){
+    var p = await sb.from('pharmacies').select('*').eq('id', s.data.session.user.id).single();
+    if (p.data) session = p.data;
+  }
+});
 </script>
 </body>
   </html>
