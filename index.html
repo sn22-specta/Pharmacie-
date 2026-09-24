@@ -2,845 +2,946 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a7d5a">
-<title>Ma Pharmacie — Trouvez votre médicament</title>
+<title>Ma Pharmacie</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 :root{
-  --primary:#0a7d5a;
-  --primary-dark:#075c42;
-  --primary-light:#e6f4ef;
-  --primary-glow:rgba(10,125,90,.25);
-  --accent:#ffb830;
-  --danger:#d64545;
-  --warning:#e08b00;
-  --info:#2563eb;
-  --whatsapp:#25D366;
-  --ink:#0f1e1a;
-  --ink-2:#3a4a44;
-  --ink-3:#6b7a74;
-  --ink-4:#9aa8a2;
-  --line:#e8ecea;
-  --line-2:#f2f5f3;
-  --bg:#f7f9f8;
-  --surface:#ffffff;
-  --shadow-sm:0 1px 2px rgba(15,30,26,.04), 0 1px 3px rgba(15,30,26,.06);
-  --shadow-md:0 4px 12px rgba(15,30,26,.06), 0 2px 4px rgba(15,30,26,.04);
-  --shadow-lg:0 12px 32px rgba(15,30,26,.10), 0 4px 8px rgba(15,30,26,.04);
-  --shadow-xl:0 24px 60px rgba(15,30,26,.16);
-  --radius-sm:8px;
-  --radius:12px;
-  --radius-lg:16px;
-  --radius-xl:22px;
-  --radius-full:999px;
+  --c: #0a7d5a;
+  --bg: #ffffff;
+  --c-04: rgba(10,125,90,0.04);
+  --c-08: rgba(10,125,90,0.08);
+  --c-12: rgba(10,125,90,0.12);
+  --c-16: rgba(10,125,90,0.16);
+  --c-24: rgba(10,125,90,0.24);
+  --c-40: rgba(10,125,90,0.40);
+  --c-60: rgba(10,125,90,0.60);
+  --c-80: rgba(10,125,90,0.80);
+  --r-sm:8px;--r:12px;--r-lg:16px;--r-xl:22px;--r-full:999px;
   --ease:cubic-bezier(.4,0,.2,1);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  background:var(--bg);
-  color:var(--ink);
-  padding-bottom:32px;
-  overflow-x:hidden;
-  line-height:1.5;
-  font-size:15px;
+  font-family:'Inter',-apple-system,sans-serif;
+  background:var(--bg);color:var(--c);
+  padding-bottom:88px;overflow-x:hidden;
+  line-height:1.5;font-size:15px;
   -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
+  overscroll-behavior-y:contain;
 }
-input,select,button,textarea{font-family:inherit;font-size:15px;outline:none;border:none;background:none}
-button{cursor:pointer;transition:transform .15s var(--ease)}
+input,select,button,textarea{
+  font-family:inherit;font-size:15px;outline:none;border:none;
+  background:none;color:inherit;
+}
+button{cursor:pointer;transition:transform .12s var(--ease)}
 button:active{transform:scale(.97)}
+button:disabled{opacity:.4;cursor:not-allowed}
 
-/* ============================================================
-   HEADER
-   ============================================================ */
+.ico{
+  width:22px;height:22px;display:block;
+  flex-shrink:0;
+  stroke:currentColor;fill:none;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.ico.sm{width:18px;height:18px}
+.ico.lg{width:28px;height:28px}
+.ico.xl{width:42px;height:42px;stroke-width:1.5}
+.ico.fill{fill:currentColor;stroke:none}
+
+/* HEADER */
 header{
-  background:linear-gradient(135deg,#0a7d5a 0%,#075c42 100%);
-  color:#fff;
-  padding:20px 20px 26px;
+  background:var(--c);color:var(--bg);
+  padding:16px 20px 20px;
   border-radius:0 0 24px 24px;
   position:sticky;top:0;z-index:100;
-  box-shadow:0 8px 32px rgba(10,125,90,.18);
-  overflow:hidden;
+  box-shadow:0 4px 20px var(--c-16);
 }
-header::before{
-  content:"";position:absolute;top:-50%;right:-20%;
-  width:280px;height:280px;border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 70%);
-  pointer-events:none;
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.brand{
+  display:flex;align-items:center;gap:10px;
+  font-weight:800;font-size:17px;letter-spacing:-.02em;
+  flex-shrink:0;
 }
-.top{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;letter-spacing:-.01em;position:relative}
-.top .brand{display:flex;align-items:center;gap:10px}
-.top .brand .logo-box{
-  width:34px;height:34px;background:rgba(255,255,255,.15);
-  border-radius:10px;display:flex;align-items:center;justify-content:center;
-  font-size:18px;backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.2);
+.logo-box{
+  width:36px;height:36px;background:var(--bg);color:var(--c);
+  border-radius:11px;display:flex;align-items:center;justify-content:center;
 }
-.menu-btn{
-  background:rgba(255,255,255,.15);color:#fff;width:42px;height:42px;
-  border-radius:12px;font-size:20px;display:flex;align-items:center;justify-content:center;
-  border:1px solid rgba(255,255,255,.15);
-  backdrop-filter:blur(10px);transition:.2s var(--ease);
+.logo-box .ico{width:20px;height:20px;stroke-width:2}
+.cmdk-trigger{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg);color:var(--c);
+  padding:10px 14px;border-radius:var(--r-full);
+  font-size:13px;font-weight:500;flex:1;min-width:0;
+  text-align:left;
 }
-.menu-btn:active{background:rgba(255,255,255,.25);transform:scale(.94)}
-.sub{font-size:13.5px;opacity:.92;margin:14px 0 16px;line-height:1.5;position:relative;font-weight:400}
+.cmdk-trigger .ct-txt{
+  flex:1;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.cmdk-trigger .ct-kbd{
+  font-size:10px;font-weight:800;
+  background:var(--c-12);color:var(--c);
+  padding:2px 7px;border-radius:5px;
+  letter-spacing:.03em;flex-shrink:0;
+}
+.header-pharma{
+  background:var(--bg);color:var(--c);
+  width:42px;height:42px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  transition:.15s var(--ease);
+}
+.header-pharma:active{transform:scale(.94);opacity:.85}
+.header-pharma .ico{width:22px;height:22px;stroke-width:2}
+.header-pharma.on{animation:pulseSoft 2.4s infinite}
+@keyframes pulseSoft{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.6)}
+  50%{box-shadow:0 0 0 8px rgba(255,255,255,0)}
+}
+.sub{
+  font-size:12.5px;opacity:.9;margin-top:12px;
+  font-weight:500;line-height:1.5;
+}
 .sub b{font-weight:700}
 
-.search-wrap{position:relative;z-index:2}
-.search{
-  width:100%;padding:16px 44px 16px 48px;
-  border-radius:14px;
-  background:#fff;color:var(--ink);
-  font-size:15.5px;font-weight:500;
-  box-shadow:0 4px 16px rgba(0,0,0,.12);
-  transition:.2s var(--ease);
-}
-.search::placeholder{color:var(--ink-4);font-weight:400}
-.search:focus{box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.search-ico{
-  position:absolute;left:16px;top:50%;transform:translateY(-50%);
-  width:18px;height:18px;color:var(--ink-4);pointer-events:none;
-}
-.search-clear{
-  position:absolute;right:12px;top:50%;transform:translateY(-50%);
-  width:26px;height:26px;border-radius:50%;background:var(--line-2);
-  color:var(--ink-3);font-size:14px;display:none;
-  align-items:center;justify-content:center;transition:.15s;
-}
-.search-clear.on{display:flex}
-.search-clear:active{background:var(--line)}
-
-/* ============================================================
-   SUGGESTIONS — Style Google
-   ============================================================ */
-.sugg{
-  position:absolute;top:calc(100% + 8px);left:0;right:0;
-  background:#fff;border-radius:16px;
-  box-shadow:var(--shadow-xl);
-  max-height:400px;overflow-y:auto;
-  display:none;z-index:50;
-  animation:dropIn .18s var(--ease);
-  -webkit-overflow-scrolling:touch;
-  border:1px solid var(--line);
-}
-@keyframes dropIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-.sugg.on{display:block}
-.sugg-item{
-  padding:13px 16px;
-  border-bottom:1px solid var(--line-2);
-  cursor:pointer;
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:14.5px;gap:12px;
-  transition:background .12s;
-  min-height:50px;
-}
-.sugg-item:last-child{border:none}
-.sugg-item:active,.sugg-item:hover{background:var(--primary-light)}
-.sugg-item .sname{
-  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  font-weight:500;color:var(--ink);
-}
-.sugg-item .sname b{font-weight:800;color:var(--primary)}
-.sugg-item .sname .sdci{color:var(--ink-3);font-weight:400;font-size:12.5px;margin-left:5px}
-.sugg-item .sright{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.sugg-item .stag{
-  font-size:10px;font-weight:700;padding:3px 8px;
-  border-radius:var(--radius-sm);
-  background:var(--primary-light);color:var(--primary-dark);
-  letter-spacing:.02em;text-transform:uppercase;
-}
-.sugg-item .stag.ord{background:#fff6e0;color:#8a5a00}
-.sugg-item .sarr{font-size:15px;color:var(--ink-4)}
-.sugg-head{
-  padding:11px 16px 9px;
-  background:var(--line-2);
-  font-size:10.5px;font-weight:700;color:var(--ink-3);
-  text-transform:uppercase;letter-spacing:.08em;
-  position:sticky;top:0;z-index:1;
-  border-bottom:1px solid var(--line);
-}
-.sugg-empty{padding:32px 24px;text-align:center;color:var(--ink-3);font-size:13.5px;line-height:1.6}
-.sugg-empty b{color:var(--ink)}
-.sugg-empty .sugg-correction{margin-top:12px;font-size:13.5px}
-.sugg-empty .sugg-correction b{color:var(--primary);cursor:pointer;text-decoration:underline;font-weight:600}
-.sugg-hint{padding:11px 16px;font-size:11.5px;color:var(--ink-4);text-align:center;background:var(--line-2);border-top:1px solid var(--line);font-weight:500}
-
-/* ============================================================
-   LAYOUT
-   ============================================================ */
-.wrap{padding:20px}
+/* LAYOUT */
+.wrap{padding:18px}
 .card{
-  background:var(--surface);padding:18px;
-  border-radius:var(--radius-lg);
-  margin-bottom:14px;
-  box-shadow:var(--shadow-sm);
-  border:1px solid var(--line-2);
+  background:var(--bg);padding:18px;
+  border-radius:var(--r-lg);margin-bottom:12px;
+  border:1px solid var(--c-12);
   animation:cardIn .35s var(--ease);
 }
-@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.card h3{font-size:16px;font-weight:700;margin-bottom:14px;letter-spacing:-.01em}
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.card h3{
+  font-size:15px;font-weight:700;margin-bottom:14px;
+  letter-spacing:-.01em;display:flex;align-items:center;gap:10px;
+}
+.card h3 .ico{width:20px;height:20px;stroke-width:1.9}
 
-/* ============================================================
-   BOUTONS
-   ============================================================ */
+/* BTN */
 .btn{
   width:100%;padding:15px 18px;
-  border-radius:var(--radius);
-  background:var(--primary);color:#fff;
+  border-radius:var(--r);
+  background:var(--c);color:var(--bg);
   font-weight:600;font-size:15px;
   margin-bottom:10px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  transition:.2s var(--ease);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  border:1.5px solid var(--c);
   letter-spacing:-.005em;
-  box-shadow:0 2px 8px var(--primary-glow);
 }
-.btn:active{background:var(--primary-dark);box-shadow:0 1px 4px var(--primary-glow)}
-.btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
-.btn.sec{
-  background:var(--line-2);color:var(--ink);
-  box-shadow:none;
-}
-.btn.sec:active{background:var(--line)}
-.btn.red{background:var(--danger);box-shadow:0 2px 8px rgba(214,69,69,.25)}
-.btn.red:active{background:#b03434}
-.btn.orange{background:var(--warning);box-shadow:0 2px 8px rgba(224,139,0,.25)}
-.btn.orange:active{background:#b87000}
-.btn.blue{background:var(--info);box-shadow:0 2px 8px rgba(37,99,235,.25)}
-.btn.blue:active{background:#1a4fbb}
-.btn.wa{background:var(--whatsapp);box-shadow:0 2px 8px rgba(37,211,102,.25)}
-.btn.wa:active{background:#1da851}
+.btn .ico{stroke-width:2}
+.btn.outline{background:var(--bg);color:var(--c)}
+.btn.soft{background:var(--c-08);color:var(--c);border-color:transparent}
+.btn.ghost{background:transparent;color:var(--c);border-color:transparent}
 .btn.sm{padding:11px 14px;font-size:14px}
-.btn.ghost{background:transparent;color:var(--primary);box-shadow:none;font-weight:600}
-.btn.ghost:active{background:var(--primary-light)}
+.btn.sm .ico{width:18px;height:18px}
 
-/* ============================================================
-   TABS
-   ============================================================ */
-.tab-bar{
-  overflow-x:auto;white-space:nowrap;
-  padding:14px 16px 6px;
-  scrollbar-width:none;
-}
-.tab-bar::-webkit-scrollbar{display:none}
-.tab{
-  display:inline-block;
-  padding:10px 16px;
-  background:var(--surface);
-  border-radius:var(--radius-sm);
-  font-size:13px;font-weight:600;
-  margin-right:8px;
-  cursor:pointer;
-  border:1px solid var(--line);
-  color:var(--ink-3);
-  position:relative;
-  transition:.2s var(--ease);
-  letter-spacing:-.005em;
-}
-.tab:active{transform:scale(.96)}
-.tab.on{
-  background:var(--primary);color:#fff;border-color:var(--primary);
-  box-shadow:0 2px 8px var(--primary-glow);
-}
-.tab .badge{
-  position:absolute;top:-6px;right:-6px;
-  background:var(--danger);color:#fff;
-  font-size:9px;font-weight:800;
-  padding:3px 6px;border-radius:var(--radius-full);
-  animation:pulse 1.8s infinite;
-  min-width:18px;
-  box-shadow:0 2px 6px rgba(214,69,69,.4);
-}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-
-/* ============================================================
-   FORMULAIRES
-   ============================================================ */
+/* FIELD */
 .field{margin-bottom:14px}
 .field label{
-  display:block;font-size:13px;font-weight:600;
-  margin-bottom:7px;color:var(--ink-2);
-  letter-spacing:-.005em;
+  display:block;font-size:12.5px;font-weight:600;
+  margin-bottom:7px;color:var(--c-80);
+  text-transform:uppercase;letter-spacing:.04em;
+  display:flex;align-items:center;gap:6px;
 }
 .field input,.field select,.field textarea{
   width:100%;padding:14px 16px;
-  border:1.5px solid var(--line);
-  border-radius:var(--radius);
-  background:var(--surface);
-  color:var(--ink);
-  font-size:15px;
-  transition:.2s var(--ease);
+  border:1.5px solid var(--c-24);
+  border-radius:var(--r);
+  background:var(--bg);color:var(--c);
+  font-size:15px;font-weight:500;
+  transition:.18s var(--ease);
 }
 .field input:focus,.field textarea:focus,.field select:focus{
-  border-color:var(--primary);
-  box-shadow:0 0 0 4px var(--primary-light);
+  border-color:var(--c);
+  box-shadow:0 0 0 4px var(--c-12);
 }
-.field input::placeholder,.field textarea::placeholder{color:var(--ink-4)}
-.field textarea{resize:vertical;min-height:60px;font-family:inherit}
+.field input::placeholder,.field textarea::placeholder{color:var(--c-40);font-weight:400}
+.field textarea{resize:vertical;min-height:70px}
 
-/* ============================================================
-   ÉCRANS
-   ============================================================ */
+/* SCREEN */
 .screen{display:none}
-.screen.on{display:block;animation:fadeIn .25s var(--ease)}
+.screen.on{display:block;animation:fadeIn .22s var(--ease)}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-/* ============================================================
-   DRAWER
-   ============================================================ */
-#drawer{
-  position:fixed;top:0;right:-340px;bottom:0;
-  width:310px;max-width:85%;
-  background:var(--surface);
-  transition:right .32s var(--ease);
-  z-index:200;
-  box-shadow:-8px 0 32px rgba(0,0,0,.18);
-  overflow-y:auto;
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:150;
+  background:var(--bg);
+  border-top:1px solid var(--c-12);
+  display:flex;align-items:flex-end;justify-content:space-around;
+  padding:8px 6px max(8px,env(safe-area-inset-bottom));
 }
-#drawer.on{right:0}
-#ov{
-  position:fixed;inset:0;
-  background:rgba(15,30,26,.5);
-  backdrop-filter:blur(3px);
-  display:none;z-index:199;
-  animation:fadeIn .2s;
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;color:var(--c-60);
+  font-size:10px;font-weight:600;
+  padding:6px 4px;border-radius:var(--r-sm);
+  position:relative;max-width:72px;
+  transition:.18s var(--ease);
 }
-#ov.on{display:block}
-.dhead{
-  background:linear-gradient(135deg,#0a7d5a 0%,#075c42 100%);
-  color:#fff;padding:26px 22px;
-  position:relative;overflow:hidden;
+.nav-item .ico{width:22px;height:22px}
+.nav-item.on{color:var(--c)}
+.nav-item.on .ico{transform:translateY(-1px)}
+.nav-item.on::after{
+  content:"";position:absolute;top:0;left:50%;
+  transform:translateX(-50%);
+  width:20px;height:3px;background:var(--c);border-radius:2px;
 }
-.dhead::before{
-  content:"";position:absolute;top:-40%;right:-30%;
-  width:180px;height:180px;border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.15), transparent 70%);
-}
-.dhead b{display:block;font-size:18px;margin-bottom:5px;font-weight:800;position:relative;letter-spacing:-.02em}
-.dhead small{font-size:12.5px;opacity:.85;position:relative}
-.ditem{
-  display:flex;align-items:center;gap:14px;
-  width:100%;padding:16px 22px;
-  background:none;text-align:left;
-  font-size:14.5px;font-weight:500;
-  border-bottom:1px solid var(--line-2);
-  color:var(--ink);
-  transition:.15s var(--ease);
-}
-.ditem:active{background:var(--primary-light)}
-.ditem .ico{
-  width:40px;height:40px;border-radius:12px;
-  background:var(--primary-light);
+.nav-badge{
+  position:absolute;top:4px;right:calc(50% - 20px);
+  background:var(--c);color:var(--bg);
+  font-size:9px;font-weight:800;
+  min-width:16px;height:16px;padding:0 4px;
+  border-radius:8px;
   display:flex;align-items:center;justify-content:center;
-  font-size:19px;flex-shrink:0;
 }
-.ditem .info{flex:1}
-.ditem .info small{
-  display:block;font-size:11.5px;color:var(--ink-3);
-  margin-top:2px;font-weight:400;
-}
-
-/* ============================================================
-   RÉSULTATS RECHERCHE
-   ============================================================ */
-.res{
-  background:var(--surface);border-radius:var(--radius-xl);
-  overflow:hidden;margin-bottom:14px;
-  box-shadow:var(--shadow-lg);
-  animation:cardIn .4s var(--ease);
-  border:1px solid var(--line-2);
-}
-.res-h{
-  background:linear-gradient(135deg,#0a7d5a 0%,#075c42 100%);
-  color:#fff;padding:20px;
-  position:relative;overflow:hidden;
-}
-.res-h::before{
-  content:"";position:absolute;top:-40%;right:-20%;
-  width:200px;height:200px;border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.14), transparent 70%);
-}
-.res-h > *{position:relative}
-.res-h b{font-size:19px;font-weight:800;letter-spacing:-.02em;display:block}
-.res-b{padding:20px}
-#map{height:160px;border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
-
-.tag{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:5px 10px;border-radius:var(--radius-sm);
-  font-size:11px;font-weight:700;
-  background:var(--primary-light);color:var(--primary-dark);
-  margin-right:6px;margin-bottom:6px;
-  letter-spacing:.01em;
-}
-.tag.ferme{background:#fdecec;color:var(--danger)}
-.tag.garde{background:#fff6e0;color:#8a5a00}
-.price{font-size:24px;font-weight:800;color:var(--primary);letter-spacing:-.02em}
-
-/* ============================================================
-   STATS
-   ============================================================ */
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-.stat{
-  background:var(--surface);padding:16px;
-  border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-sm);
-  border:1px solid var(--line-2);
-  transition:.2s var(--ease);
-}
-.stat .v{font-size:24px;font-weight:800;color:var(--primary);letter-spacing:-.03em;line-height:1.1}
-.stat .l{font-size:11.5px;color:var(--ink-3);margin-top:4px;font-weight:500}
-.stat.warn .v{color:var(--warning)}
-.stat.danger .v{color:var(--danger)}
-
-/* ============================================================
-   PRODUITS PHARMACIE
-   ============================================================ */
-.prod{
-  display:flex;gap:12px;padding:14px;
-  background:var(--surface);
-  border-radius:var(--radius);
-  margin-bottom:10px;
-  border-left:4px solid var(--primary);
-  box-shadow:var(--shadow-sm);
-  transition:.2s var(--ease);
-  align-items:center;
-}
-.prod.low{border-left-color:var(--warning)}
-.prod.out{border-left-color:var(--danger);opacity:.8}
-.prod .info{flex:1;min-width:0}
-.prod b{display:block;font-size:14.5px;margin-bottom:4px;font-weight:600;letter-spacing:-.005em}
-.prod small{color:var(--ink-3);font-size:12px;display:block;font-weight:500}
-.qte{
-  text-align:center;font-weight:800;color:var(--primary);
-  font-size:15px;padding:8px 12px;
-  background:var(--primary-light);
-  border-radius:var(--radius-sm);
-  min-width:52px;letter-spacing:-.02em;
-}
-.qte.low{background:#fff6e0;color:var(--warning)}
-.qte.out{background:#fdecec;color:var(--danger)}
-.qte small{display:block;font-size:9px;font-weight:500;opacity:.75;margin-top:2px;letter-spacing:.02em;text-transform:uppercase}
-.icon-btn{
-  background:var(--line-2);width:38px;height:38px;
-  border-radius:var(--radius-sm);font-size:16px;
-  display:flex;align-items:center;justify-content:center;
-  transition:.15s var(--ease);
-}
-.icon-btn:active{background:var(--line)}
-
-/* ============================================================
-   TOAST
-   ============================================================ */
-#toast{
-  position:fixed;bottom:24px;left:50%;
-  transform:translateX(-50%) translateY(24px);
-  background:var(--ink);color:#fff;
-  padding:14px 22px;border-radius:var(--radius);
-  font-size:13.5px;font-weight:600;
-  z-index:500;opacity:0;
-  transition:.32s var(--ease);
-  pointer-events:none;max-width:90%;
-  text-align:center;
-  box-shadow:var(--shadow-xl);
-  letter-spacing:-.005em;
-}
-#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* ============================================================
-   LOADING
-   ============================================================ */
-.load{text-align:center;padding:48px 20px;color:var(--ink-3);font-size:14px;font-weight:500}
-.spinner{
-  width:36px;height:36px;
-  border:3px solid var(--line);
-  border-top-color:var(--primary);
+.nav-fab{
+  flex:0 0 auto;width:58px;height:58px;margin-top:-24px;
   border-radius:50%;
-  animation:spin .8s linear infinite;
-  margin:0 auto 14px;
+  background:var(--c);color:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  border:4px solid var(--bg);
+  box-shadow:0 6px 20px var(--c-40);
 }
-@keyframes spin{to{transform:rotate(360deg)}}
+.nav-fab .ico{width:26px;height:26px;stroke-width:2}
+.nav-fab:active{transform:scale(.92)}
 
-/* ============================================================
-   MODAL
-   ============================================================ */
+/* CMDK */
+.cmdk{
+  position:fixed;inset:0;
+  background:rgba(10,125,90,.55);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  display:none;z-index:500;
+  align-items:flex-start;justify-content:center;
+  padding-top:9vh;padding-left:14px;padding-right:14px;
+}
+.cmdk.on{display:flex;animation:fadeIn .16s var(--ease)}
+.cmdk-panel{
+  background:var(--bg);
+  width:100%;max-width:600px;
+  border-radius:20px;overflow:hidden;
+  animation:cmdkIn .26s var(--ease);
+  max-height:78vh;
+  display:flex;flex-direction:column;
+  border:1.5px solid var(--c);
+  box-shadow:0 20px 60px var(--c-40);
+}
+@keyframes cmdkIn{from{opacity:0;transform:scale(.96) translateY(-10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.cmdk-input-wrap{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 18px;
+  border-bottom:1px solid var(--c-12);
+}
+.cmdk-ico{color:var(--c);flex-shrink:0;width:20px;height:20px}
+.cmdk-input{
+  flex:1;font-size:16px;font-weight:500;
+  color:var(--c);background:none;border:none;outline:none;min-width:0;
+}
+.cmdk-input::placeholder{color:var(--c-40)}
+.cmdk-actions{display:flex;gap:8px;flex-shrink:0}
+.cmdk-mic,.cmdk-close{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--c-08);color:var(--c);
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;
+}
+.cmdk-mic:active,.cmdk-close:active{background:var(--c-16)}
+.cmdk-mic.on{background:var(--c);color:var(--bg)}
+.cmdk-results{overflow-y:auto;padding:8px 0;flex:1}
+.cmdk-group{
+  padding:10px 20px 6px;
+  font-size:10.5px;font-weight:800;
+  color:var(--c-40);text-transform:uppercase;
+  letter-spacing:.08em;background:var(--bg);
+  position:sticky;top:0;z-index:1;
+}
+.cmdk-item{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 20px;cursor:pointer;
+  transition:.12s var(--ease);position:relative;
+}
+.cmdk-item.on{background:var(--c-04)}
+.cmdk-item.on::before{
+  content:"";position:absolute;left:0;top:6px;bottom:6px;
+  width:3px;background:var(--c);border-radius:0 3px 3px 0;
+}
+.cmdk-item:active{background:var(--c-08)}
+.cmdk-item .ci-ico{
+  width:40px;height:40px;border-radius:11px;
+  background:var(--c-08);color:var(--c);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.cmdk-item.on .ci-ico{background:var(--c);color:var(--bg)}
+.cmdk-item .ci-info{flex:1;min-width:0}
+.cmdk-item .ci-title{
+  font-size:14.5px;font-weight:600;color:var(--c);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.cmdk-item .ci-title b{font-weight:800}
+.cmdk-item .ci-desc{
+  font-size:12px;color:var(--c-60);font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:1px;
+}
+.cmdk-item .ci-kbd{
+  font-size:10px;font-weight:800;color:var(--c-40);
+  background:var(--c-08);padding:3px 8px;
+  border-radius:5px;letter-spacing:.04em;flex-shrink:0;
+}
+.cmdk-empty{
+  padding:48px 24px;text-align:center;
+  color:var(--c-60);font-size:13.5px;font-weight:500;
+}
+.cmdk-empty .ico{margin:0 auto 12px;color:var(--c-40)}
+.cmdk-empty b{color:var(--c);display:block;margin-bottom:6px;font-size:15px;font-weight:800}
+.cmdk-footer{
+  display:flex;justify-content:space-between;gap:10px;
+  padding:10px 18px;background:var(--c-04);
+  font-size:11px;color:var(--c-60);font-weight:600;
+  border-top:1px solid var(--c-12);
+}
+.cmdk-footer kbd{
+  background:var(--bg);border:1px solid var(--c-24);
+  padding:2px 6px;border-radius:4px;
+  font-family:inherit;font-size:10px;font-weight:700;
+  margin-right:4px;
+}
+
+/* TOASTS */
+#toasts{
+  position:fixed;bottom:100px;left:50%;
+  transform:translateX(-50%);z-index:600;
+  display:flex;flex-direction:column-reverse;gap:8px;
+  width:calc(100% - 40px);max-width:420px;pointer-events:none;
+}
+.toast{
+  background:var(--c);color:var(--bg);
+  padding:13px 18px;border-radius:var(--r);
+  font-size:13.5px;font-weight:600;
+  display:flex;align-items:center;gap:10px;
+  animation:toastIn .28s var(--ease);
+  box-shadow:0 8px 24px var(--c-40);
+}
+.toast .ico{width:18px;height:18px;stroke-width:2.2}
+.toast.out{animation:toastOut .28s var(--ease) forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-10px) scale(.95)}}
+
+/* MODAL */
 .modal-bg{
   position:fixed;inset:0;
-  background:rgba(15,30,26,.55);
+  background:rgba(10,125,90,.5);
   backdrop-filter:blur(4px);
   display:none;z-index:300;
   align-items:flex-end;justify-content:center;
 }
 .modal-bg.on{display:flex;animation:fadeIn .2s}
 .modal{
-  background:var(--surface);
+  background:var(--bg);
   width:100%;max-width:480px;
   border-radius:24px 24px 0 0;
-  padding:26px 22px 30px;
+  padding:8px 22px 30px;
   max-height:92vh;overflow-y:auto;
-  animation:slideUp .32s var(--ease);
+  animation:slideUp .3s var(--ease);
 }
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal h2{font-size:19px;font-weight:800;margin-bottom:16px;letter-spacing:-.02em}
 .modal::before{
-  content:"";display:block;width:40px;height:4px;
-  background:var(--line);border-radius:2px;
-  margin:-14px auto 14px;
+  content:"";display:block;width:44px;height:4px;
+  background:var(--c-24);border-radius:2px;
+  margin:6px auto 18px;
 }
-
-.upload-box{
-  border:2px dashed var(--line);
-  border-radius:var(--radius);
-  padding:26px;text-align:center;
-  cursor:pointer;background:var(--line-2);
-  margin-bottom:12px;
-  transition:.2s var(--ease);
+.modal h2{
+  font-size:18px;font-weight:800;
+  margin-bottom:16px;letter-spacing:-.02em;
+  display:flex;align-items:center;gap:10px;
 }
-.upload-box:active,.upload-box.on{
-  border-color:var(--primary);
-  background:var(--primary-light);
-}
-.upload-box.on{border-style:solid}
-.preview img{width:100%;border-radius:var(--radius);margin-top:10px;box-shadow:var(--shadow-md)}
 .close-modal{
-  background:none;color:var(--ink-3);
+  background:none;color:var(--c-60);
   font-size:14px;width:100%;
-  padding:14px;font-weight:600;
-  border-radius:var(--radius);
-  transition:.15s;
+  padding:14px;font-weight:600;border-radius:var(--r);
 }
-.close-modal:active{background:var(--line-2)}
+.close-modal:active{background:var(--c-04)}
 
-/* ============================================================
-   OPTIONS PAIEMENT
-   ============================================================ */
-.pay-option{
-  display:flex;align-items:center;gap:14px;
-  padding:15px 16px;
-  border:2px solid var(--line);
-  border-radius:var(--radius);
-  margin-bottom:10px;cursor:pointer;
-  transition:.2s var(--ease);
-  background:var(--surface);
+/* RESULT */
+.res{
+  background:var(--bg);border-radius:var(--r-xl);
+  overflow:hidden;margin-bottom:12px;
+  border:1.5px solid var(--c);
+  animation:cardIn .35s var(--ease);
 }
-.pay-option:active{transform:scale(.99)}
-.pay-option.on{
-  border-color:var(--primary);
-  background:var(--primary-light);
-  box-shadow:0 0 0 3px var(--primary-glow);
+.res-h{background:var(--c);color:var(--bg);padding:20px}
+.res-h .rlabel{
+  font-size:10.5px;opacity:.85;
+  text-transform:uppercase;letter-spacing:.08em;
+  font-weight:700;margin-bottom:6px;
 }
-.pay-option input[type=radio]{
-  width:20px;height:20px;accent-color:var(--primary);flex-shrink:0;
+.res-h b{font-size:19px;font-weight:800;letter-spacing:-.02em;display:block}
+.res-h .dci{font-size:12.5px;opacity:.85;margin-top:4px}
+.res-h .ord{
+  font-size:12.5px;opacity:.9;margin-top:8px;
+  font-weight:500;display:flex;align-items:center;gap:6px;
 }
-.pay-option .pi{font-size:26px;flex-shrink:0;line-height:1}
-.pay-option .pt{flex:1}
-.pay-option .pt b{display:block;font-size:14.5px;margin-bottom:2px;font-weight:700;letter-spacing:-.005em}
-.pay-option .pt small{color:var(--ink-3);font-size:12px;font-weight:500}
+.res-b{padding:20px}
+#map{height:160px;border-radius:var(--r);margin-bottom:14px;overflow:hidden}
 
-/* ============================================================
-   CHAT
-   ============================================================ */
+.tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:var(--r-sm);
+  font-size:11px;font-weight:700;
+  background:var(--c-08);color:var(--c);
+  margin-right:6px;margin-bottom:6px;
+}
+.tag .dot{width:6px;height:6px;border-radius:50%;background:var(--c)}
+.price{font-size:24px;font-weight:800;color:var(--c);letter-spacing:-.03em}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{
+  background:var(--bg);padding:16px;
+  border-radius:var(--r-lg);
+  border:1.5px solid var(--c-16);
+}
+.stat .v{font-size:24px;font-weight:800;color:var(--c);letter-spacing:-.03em;line-height:1.1}
+.stat .l{font-size:11.5px;color:var(--c-60);margin-top:4px;font-weight:600}
+
+/* PROD */
+.prod{
+  display:flex;gap:12px;padding:14px;
+  background:var(--bg);border-radius:var(--r);
+  margin-bottom:8px;
+  border:1px solid var(--c-12);
+  align-items:center;transition:.15s var(--ease);
+}
+.prod .info{flex:1;min-width:0}
+.prod b{
+  display:block;font-size:14px;
+  margin-bottom:3px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.prod small{color:var(--c-60);font-size:12px;display:block;font-weight:500}
+.qte{
+  text-align:center;font-weight:800;color:var(--c);
+  font-size:14px;padding:7px 11px;
+  background:var(--c-08);border-radius:var(--r-sm);
+  min-width:48px;
+}
+.icon-btn{
+  background:var(--c-08);color:var(--c);
+  width:36px;height:36px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;
+}
+.icon-btn .ico{width:16px;height:16px}
+
+/* EMPTY */
+.empty{text-align:center;padding:44px 20px;color:var(--c-60)}
+.empty .ico{margin:0 auto 14px;color:var(--c-24);width:52px;height:52px;stroke-width:1.5}
+.empty p{font-size:13.5px;line-height:1.55;font-weight:500}
+.empty b{color:var(--c);font-weight:700}
+
+/* AI HERO */
+.ai-hero{
+  background:var(--c);color:var(--bg);
+  padding:22px;border-radius:var(--r-lg);
+  margin-bottom:14px;position:relative;overflow:hidden;
+}
+.ai-hero::before{
+  content:"";position:absolute;top:-50%;right:-30%;
+  width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);
+}
+.ai-hero > *{position:relative}
+.ai-hero h2{
+  font-size:17px;font-weight:800;margin-bottom:6px;
+  display:flex;align-items:center;gap:10px;
+}
+.ai-hero h2 .ico{width:22px;height:22px;stroke-width:2.2}
+.ai-hero p{font-size:13px;opacity:.92;line-height:1.5;margin-bottom:16px}
+.ai-hero .btn{background:var(--bg);color:var(--c);border-color:var(--bg)}
+
+/* TIP CARD */
+.tip-card{
+  border:1.5px solid var(--c-16);
+  border-left:4px solid var(--c);
+  border-radius:var(--r);padding:14px;
+  margin-bottom:12px;background:var(--bg);
+}
+.tip-card b{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:6px;font-size:13px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.tip-card b .ico{width:16px;height:16px;stroke-width:2.2}
+.tip-card p{color:var(--c-80);font-size:12.5px;line-height:1.55;font-weight:500}
+
+/* TABS */
+.tab-bar{overflow-x:auto;white-space:nowrap;padding:12px 16px 4px;scrollbar-width:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:10px 16px;
+  background:var(--bg);color:var(--c-60);
+  border:1.5px solid var(--c-16);
+  border-radius:var(--r-sm);
+  font-size:12.5px;font-weight:600;
+  margin-right:8px;cursor:pointer;position:relative;
+  transition:.18s var(--ease);
+}
+.tab .ico{width:16px;height:16px}
+.tab.on{background:var(--c);color:var(--bg);border-color:var(--c)}
+.tab .badge{
+  position:absolute;top:-6px;right:-6px;
+  background:var(--c);color:var(--bg);
+  font-size:9px;font-weight:800;
+  padding:3px 6px;border-radius:var(--r-full);
+  min-width:18px;text-align:center;
+}
+
+/* CHAT */
 .chat{
   display:flex;flex-direction:column;
-  height:calc(100vh - 180px);
-  background:var(--surface);
-  border-radius:var(--radius-lg);
+  height:calc(100vh - 200px);
+  background:var(--bg);
+  border-radius:var(--r-lg);
   overflow:hidden;
-  box-shadow:var(--shadow-lg);
-  border:1px solid var(--line-2);
+  border:1.5px solid var(--c-16);
 }
 .chat-head{
-  background:linear-gradient(135deg,#0a7d5a 0%,#075c42 100%);
-  color:#fff;padding:16px 18px;
+  background:var(--c);color:var(--bg);
+  padding:16px 18px;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
-.chat-head b{font-size:15px;display:block;font-weight:700;letter-spacing:-.01em}
-.chat-head small{display:block;font-size:11.5px;opacity:.9;margin-top:3px;font-weight:500}
-.online-dot{
-  display:inline-block;width:7px;height:7px;
-  background:#4ade80;border-radius:50%;
-  margin-right:5px;box-shadow:0 0 8px #4ade80;
-  animation:pulse 2s infinite;
+.chat-head b{font-size:15px;display:block;font-weight:700}
+.chat-head small{
+  display:flex;align-items:center;gap:6px;
+  font-size:11.5px;opacity:.85;margin-top:3px;font-weight:500;
 }
-.chat-body{flex:1;overflow-y:auto;padding:16px;background:var(--bg)}
+.online-dot{
+  display:inline-block;width:6px;height:6px;
+  background:var(--bg);border-radius:50%;
+}
+.chat-body{flex:1;overflow-y:auto;padding:16px;background:var(--c-04)}
 .msg{
   max-width:82%;padding:11px 14px;
-  border-radius:16px;margin-bottom:10px;
+  border-radius:16px;margin-bottom:8px;
   font-size:14.5px;line-height:1.45;
   word-wrap:break-word;
-  animation:msgIn .28s var(--ease);
-  font-weight:500;
+  animation:msgIn .25s var(--ease);font-weight:500;
 }
-@keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .msg.patient{
-  background:var(--primary);color:#fff;
-  margin-left:auto;border-bottom-right-radius:5px;
-  box-shadow:0 2px 8px var(--primary-glow);
+  background:var(--c);color:var(--bg);
+  margin-left:auto;border-bottom-right-radius:4px;
 }
 .msg.pharmacie{
-  background:var(--surface);color:var(--ink);
-  border-bottom-left-radius:5px;
-  box-shadow:var(--shadow-sm);
+  background:var(--bg);color:var(--c);
+  border-bottom-left-radius:4px;
+  border:1px solid var(--c-12);
 }
 .msg.system{
-  background:#fff6e0;color:#8a5a00;
-  margin:12px auto;max-width:90%;
-  text-align:center;font-size:12.5px;
-  padding:9px 16px;border-radius:var(--radius);
-  font-weight:600;
+  background:var(--c-08);color:var(--c);
+  margin:10px auto;max-width:90%;text-align:center;
+  font-size:12px;padding:8px 14px;
+  border-radius:var(--r);font-weight:700;
 }
-.msg img{
-  max-width:100%;border-radius:var(--radius);
-  margin-bottom:6px;display:block;cursor:pointer;
-}
-.msg small{
-  display:block;font-size:10px;opacity:.65;
-  margin-top:5px;text-align:right;font-weight:500;
-}
+.msg img{max-width:100%;border-radius:var(--r);margin-bottom:6px;display:block;cursor:pointer}
+.msg small{display:block;font-size:10px;opacity:.65;margin-top:4px;text-align:right;font-weight:500}
 .chat-input{
-  display:flex;gap:10px;padding:12px;
-  background:var(--surface);
-  border-top:1px solid var(--line);
+  display:flex;gap:8px;padding:10px;
+  background:var(--bg);border-top:1px solid var(--c-12);
   align-items:center;
 }
 .chat-input button{
-  background:var(--primary);color:#fff;
-  width:46px;height:46px;border-radius:50%;
-  font-size:17px;flex-shrink:0;
+  background:var(--c);color:var(--bg);
+  width:44px;height:44px;border-radius:50%;
+  flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  transition:.15s var(--ease);
-  box-shadow:0 2px 8px var(--primary-glow);
 }
-.chat-input button:active{transform:scale(.9)}
-.chat-input .cam{background:var(--line-2);color:var(--ink-3);box-shadow:none}
+.chat-input button .ico{width:20px;height:20px;stroke-width:2}
+.chat-input .cam{background:var(--c-08);color:var(--c)}
 .chat-input input[type=text]{
-  flex:1;padding:13px 18px;
-  border:1.5px solid var(--line);
-  border-radius:var(--radius-full);
-  min-width:0;font-size:14.5px;font-weight:500;
+  flex:1;padding:12px 16px;
+  border:1.5px solid var(--c-16);
+  border-radius:var(--r-full);min-width:0;
+  font-size:14.5px;background:var(--bg);color:var(--c);font-weight:500;
+}
+.chat-input input[type=text]:focus{border-color:var(--c);box-shadow:0 0 0 4px var(--c-12)}
+
+/* BADGES */
+.statut-badge{
+  display:inline-block;padding:5px 11px;
+  border-radius:var(--r-full);
+  font-size:10.5px;font-weight:800;
+  letter-spacing:.04em;text-transform:uppercase;
+  background:var(--c-08);color:var(--c);
+}
+.pay-badge{
+  display:inline-block;padding:3px 9px;
+  border-radius:var(--r-sm);
+  font-size:10.5px;font-weight:800;
+  letter-spacing:.03em;text-transform:uppercase;
+  background:var(--c-08);color:var(--c);
+}
+
+.bar-info{
+  background:var(--c-08);
+  padding:12px 14px;border-radius:var(--r);
+  font-size:12.5px;color:var(--c);
+  margin-bottom:14px;line-height:1.55;
+  font-weight:500;border-left:3px solid var(--c);
+}
+.bar-info b{font-weight:800}
+
+/* UPLOAD */
+.upload-box{
+  border:2px dashed var(--c-24);
+  border-radius:var(--r);padding:26px;
+  text-align:center;cursor:pointer;
+  background:var(--c-04);margin-bottom:10px;
   transition:.2s var(--ease);
 }
-.chat-input input[type=text]:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-light)}
-
-/* ============================================================
-   BADGES STATUT
-   ============================================================ */
-.statut-badge{
-  display:inline-block;padding:5px 12px;
-  border-radius:var(--radius-full);
-  font-size:11px;font-weight:800;
-  letter-spacing:.03em;text-transform:uppercase;
+.upload-box:active,.upload-box.on{
+  border-color:var(--c);background:var(--c-08);
+  border-style:solid;
 }
-.statut-badge.en_attente{background:#fff6e0;color:#8a5a00}
-.statut-badge.acceptee{background:#e8f0ff;color:#1a4fbb}
-.statut-badge.prete{background:var(--primary-light);color:var(--primary-dark)}
-.statut-badge.refusee{background:#fdecec;color:var(--danger)}
-.statut-badge.livree{background:var(--line);color:var(--ink-3)}
-.pay-badge{
-  display:inline-block;padding:4px 10px;
-  border-radius:var(--radius-sm);
-  font-size:10.5px;font-weight:700;
-  margin-left:6px;letter-spacing:.02em;
+.upload-box .ico{margin:0 auto;color:var(--c-40);width:38px;height:38px;stroke-width:1.5}
+.upload-box .txt{margin-top:8px;font-size:12.5px;color:var(--c-60);font-weight:600}
+.preview img{
+  width:100%;border-radius:var(--r);margin-top:10px;
+  border:1.5px solid var(--c-16);
 }
-.pay-badge.a_payer{background:#fdecec;color:var(--danger)}
-.pay-badge.en_attente{background:#fff6e0;color:#8a5a00}
-.pay-badge.paye{background:var(--primary-light);color:var(--primary-dark)}
 
-/* ============================================================
-   EMPTY STATES
-   ============================================================ */
-.empty{
-  text-align:center;padding:48px 24px;
-  color:var(--ink-3);
+/* PAY OPTION */
+.pay-option{
+  display:flex;align-items:center;gap:14px;
+  padding:15px 16px;
+  border:2px solid var(--c-16);
+  border-radius:var(--r);margin-bottom:10px;
+  cursor:pointer;transition:.18s var(--ease);
+  background:var(--bg);
 }
-.empty .icon{font-size:56px;margin-bottom:14px;opacity:.7}
-.empty p{font-size:14px;line-height:1.6;font-weight:500}
-.empty b{color:var(--ink)}
+.pay-option.on{border-color:var(--c);background:var(--c-08)}
+.pay-option input[type=radio]{
+  width:20px;height:20px;accent-color:var(--c);flex-shrink:0;
+}
+.pay-option .pi{
+  width:40px;height:40px;border-radius:11px;
+  background:var(--c-08);color:var(--c);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.pay-option.on .pi{background:var(--c);color:var(--bg)}
+.pay-option .pi .ico{width:20px;height:20px;stroke-width:2}
+.pay-option .pt{flex:1}
+.pay-option .pt b{display:block;font-size:14px;margin-bottom:2px;font-weight:700}
+.pay-option .pt small{color:var(--c-60);font-size:12px;font-weight:500}
 
-/* ============================================================
-   STEPS
-   ============================================================ */
-.steps{display:flex;flex-direction:column;gap:16px;margin:18px 0}
+/* SYMPTOM GRID */
+.symptom-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;
+}
+.symptom-btn{
+  background:var(--bg);
+  border:1.5px solid var(--c-16);
+  border-radius:var(--r);padding:16px 10px;
+  text-align:center;font-size:12.5px;
+  font-weight:600;cursor:pointer;
+  transition:.18s var(--ease);color:var(--c);
+}
+.symptom-btn.on{
+  border-color:var(--c);background:var(--c);color:var(--bg);
+}
+.symptom-btn .si{
+  display:flex;align-items:center;justify-content:center;margin-bottom:8px;
+}
+.symptom-btn .si .ico{width:28px;height:28px;stroke-width:1.6}
+
+/* SCANNER */
+.scanner-overlay{
+  position:fixed;inset:0;background:var(--c);z-index:400;
+  display:none;flex-direction:column;color:var(--bg);
+}
+.scanner-overlay.on{display:flex}
+.scanner-top{
+  padding:18px 20px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.scanner-top b{
+  font-size:15px;font-weight:700;
+  display:flex;align-items:center;gap:10px;
+}
+.scanner-close{
+  background:var(--bg);color:var(--c);
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.scanner-view{
+  flex:1;display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.scanner-frame{
+  width:100%;max-width:380px;aspect-ratio:1;
+  border-radius:20px;border:2px solid var(--c-40);
+  position:relative;overflow:hidden;background:var(--c-08);
+}
+.scanner-frame::before,.scanner-frame::after{
+  content:"";position:absolute;width:40px;height:40px;border:4px solid var(--bg);
+}
+.scanner-frame::before{top:-2px;left:-2px;border-right:none;border-bottom:none;border-radius:20px 0 0 0}
+.scanner-frame::after{bottom:-2px;right:-2px;border-left:none;border-top:none;border-radius:0 0 20px 0}
+.scanner-line{
+  position:absolute;left:10%;right:10%;height:2px;
+  background:var(--bg);box-shadow:0 0 20px var(--bg);
+  animation:scanLine 2.2s infinite var(--ease);
+}
+@keyframes scanLine{0%,100%{top:10%}50%{top:88%}}
+.scanner-bottom{padding:22px 20px 32px;text-align:center}
+.scanner-status{font-size:13.5px;font-weight:600;margin-bottom:16px;min-height:20px}
+.scanner-progress{
+  width:100%;max-width:300px;height:4px;
+  background:var(--c-24);border-radius:2px;
+  overflow:hidden;margin:0 auto 16px;
+}
+.scanner-progress-fill{
+  height:100%;background:var(--bg);width:0%;
+  transition:.3s;border-radius:2px;
+}
+.scanner-bottom .btn{background:var(--bg);color:var(--c);border-color:var(--bg)}
+
+/* SKELETON */
+.skel{
+  background:linear-gradient(90deg,var(--c-04) 0%,var(--c-08) 50%,var(--c-04) 100%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;border-radius:var(--r-sm);
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-line{height:14px;margin-bottom:10px}
+.skel-line.sm{width:60%}
+.skel-line.lg{height:20px;width:80%}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:14px;margin:14px 0}
 .step{display:flex;gap:14px;align-items:flex-start}
 .step .n{
   width:30px;height:30px;border-radius:50%;
-  background:var(--primary-light);color:var(--primary);
+  background:var(--c);color:var(--bg);
   font-weight:800;font-size:13px;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
-.step .t{font-size:13.5px;line-height:1.55;padding-top:5px;font-weight:500}
-.step .t b{color:var(--primary);display:block;margin-bottom:3px;font-weight:700}
+.step .t{font-size:13px;line-height:1.55;padding-top:5px;font-weight:500}
+.step .t b{color:var(--c);display:block;margin-bottom:2px;font-weight:700}
 
-/* ============================================================
-   INFO BANNERS
-   ============================================================ */
-.bar-info{
-  background:var(--primary-light);
-  padding:12px 14px;border-radius:var(--radius);
-  font-size:12.5px;color:var(--primary-dark);
-  margin-bottom:14px;line-height:1.5;
-  font-weight:500;
-  border-left:3px solid var(--primary);
-}
-.bar-info.warn{background:#fff6e0;color:#8a5a00;border-left-color:var(--warning)}
-.bar-info.danger{background:#fdecec;color:var(--danger);border-left-color:var(--danger)}
-
-/* ============================================================
-   PHONE DISPLAY (PAIEMENT)
-   ============================================================ */
-.phone-display{
-  background:var(--line-2);padding:14px;
-  border-radius:var(--radius);
-  font-size:15.5px;font-weight:800;
-  text-align:center;margin-bottom:12px;
-  color:var(--primary);letter-spacing:1px;
-  user-select:all;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.copy-btn{
-  background:var(--primary);color:#fff;
-  padding:7px 12px;border-radius:var(--radius-sm);
-  font-size:11.5px;font-weight:700;
-  transition:.15s;
-}
-.copy-btn:active{background:var(--primary-dark)}
-
-/* ============================================================
-   PROMO
-   ============================================================ */
-.codepromo{display:flex;gap:8px;margin-top:10px}
-.codepromo input{
-  flex:1;padding:11px 14px;font-size:13.5px;
-  border:1.5px solid var(--line);border-radius:var(--radius-sm);
-  font-weight:600;text-transform:uppercase;letter-spacing:.05em;
-  transition:.2s;
-}
-.codepromo input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
-.codepromo button{
-  background:var(--primary);color:#fff;
-  padding:11px 16px;border-radius:var(--radius-sm);
-  font-weight:700;font-size:13px;
-  transition:.15s;
-}
-.codepromo button:active{background:var(--primary-dark)}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
 @media (max-width:380px){
-  .wrap{padding:16px}
-  .card{padding:16px}
-  header{padding:18px 16px 22px}
-  .search{padding:14px 40px 14px 44px;font-size:15px}
+  .wrap{padding:14px}
+  .card{padding:14px}
+  header{padding:14px 16px 18px}
+  .cmdk-trigger .ct-kbd{display:none}
+  .cmdk-trigger{padding:10px 12px}
+  .brand span{display:none}
+  .header-pharma{width:38px;height:38px}
 }
 </style>
 </head>
 <body>
 
-<div id="ov" onclick="closeDrawer()"></div>
-<aside id="drawer">
-  <div class="dhead">
-    <b>💊 Ma Pharmacie</b>
-    <small>Trouvez votre médicament</small>
-  </div>
-  <button class="ditem" onclick="go('client')">
-    <div class="ico">🔍</div>
-    <div class="info">Espace Client<small>Chercher un médicament</small></div>
-  </button>
-  <button class="ditem" onclick="go('mes-commandes')">
-    <div class="ico">📦</div>
-    <div class="info">Mes commandes<small>Suivre et payer</small></div>
-  </button>
-  <button class="ditem" onclick="go('pharma')">
-    <div class="ico">🏥</div>
-    <div class="info">Espace Pharmacie<small>Connexion / Inscription</small></div>
-  </button>
-  <button class="ditem" onclick="go('about')">
-    <div class="ico">ℹ️</div>
-    <div class="info">À propos<small>Comment ça marche</small></div>
-  </button>
-</aside>
+<!-- ============================================================
+     SPRITE SVG
+     ============================================================ -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-pill" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-45 12 12)"/><path d="M9 9l6 6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5l-3.8-3.8"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+  <symbol id="i-package" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4"/><path d="M12 11v10"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></symbol>
+  <symbol id="i-hospital" viewBox="0 0 24 24"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/><path d="M12 8v4"/><path d="M10 10h4"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5"/><circle cx="12" cy="18" r=".5"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/><circle cx="17" cy="14" r="1"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8 9 9 0 0 1-4-1l-6 2 2-5a9 9 0 0 1-1-4 8 8 0 0 1 8-8 8 8 0 0 1 8 8z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 3h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></symbol>
+  <symbol id="i-location" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r=".5"/></symbol>
+  <symbol id="i-thermometer" viewBox="0 0 24 24"><path d="M14 14V4a2 2 0 0 0-4 0v10a4 4 0 1 0 4 0z"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-1 5.8V15a3 3 0 0 0 3 3h1V9c0-1.5.5-2.5 1.5-3"/><path d="M15 3a3 3 0 0 1 3 3 3 3 0 0 1 1 5.8V15a3 3 0 0 1-3 3h-1V9c0-1.5-.5-2.5-1.5-3"/><path d="M12 6v14"/></symbol>
+  <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h10a3 3 0 1 0-3-3"/><path d="M3 12h16a3 3 0 1 1-3 3"/><path d="M3 16h8"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 2s7 8 7 13a7 7 0 0 1-14 0c0-5 7-13 7-13z"/></symbol>
+  <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M12 2a3 3 0 0 1 3 3c0 1.5-1.5 2.5-3 4.5-1.5-2-3-3-3-4.5a3 3 0 0 1 3-3z"/><path d="M22 12a3 3 0 0 1-3 3c-1.5 0-2.5-1.5-4.5-3 2-1.5 3-3 4.5-3a3 3 0 0 1 3 3z"/><path d="M12 22a3 3 0 0 1-3-3c0-1.5 1.5-2.5 3-4.5 1.5 2 3 3 3 4.5a3 3 0 0 1-3 3z"/><path d="M2 12a3 3 0 0 1 3-3c1.5 0 2.5 1.5 4.5 3-2 1.5-3 3-4.5 3a3 3 0 0 1-3-3z"/></symbol>
+  <symbol id="i-bug" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="6" ry="8"/><path d="M9 6l-2-3"/><path d="M15 6l2-3"/><path d="M6 10H2"/><path d="M6 14H2"/><path d="M6 18H2"/><path d="M22 10h-4"/><path d="M22 14h-4"/><path d="M22 18h-4"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 11v2"/><path d="M10 11v2"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3"/><path d="M21 14v3"/><path d="M14 21h3"/><path d="M21 21h-1"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 5 3 6 3 6H3s3-1 3-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+</svg>
 
+<!-- HEADER -->
 <header>
   <div class="top">
     <div class="brand">
-      <div class="logo-box">💊</div>
+      <div class="logo-box"><svg class="ico"><use href="#i-pill"/></svg></div>
       <span>Ma Pharmacie</span>
     </div>
-    <button class="menu-btn" onclick="openDrawer()">☰</button>
+    <button class="cmdk-trigger" onclick="openCmdk()">
+      <svg class="ico sm"><use href="#i-search"/></svg>
+      <span class="ct-txt">Chercher...</span>
+      <span class="ct-kbd">⌘K</span>
+    </button>
+    <button class="header-pharma" id="headerPharmaBtn" onclick="go('pharma')" title="Espace Pharmacie">
+      <svg class="ico"><use href="#i-hospital"/></svg>
+    </button>
   </div>
-  <div class="sub" id="hSub">Tapez votre médicament.<br><b>On vous montre la pharmacie la plus proche qui l'a.</b></div>
-  <div id="hSearch" class="search-wrap">
-    <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-      <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-    </svg>
-    <input class="search" id="search" placeholder="Paracétamol, douleur, amoxi..." autocomplete="off">
-    <button class="search-clear" id="sClear" onclick="clearSearch()">✕</button>
-    <div class="sugg" id="sugg"></div>
-  </div>
+  <div class="sub" id="hSub">Assistant santé · Tapez <b>⌘K</b> pour tout faire</div>
 </header>
 
+<!-- ÉCRAN ACCUEIL -->
 <section class="screen on" id="s-client">
   <div class="wrap">
-    <div class="card" style="text-align:center">
-      <div style="font-size:54px;margin-bottom:8px">💊</div>
-      <h2 style="margin:10px 0 16px;font-size:18px;font-weight:800;letter-spacing:-.02em">Comment ça marche ?</h2>
-      <div class="steps" style="text-align:left">
-        <div class="step"><div class="n">1</div><div class="t"><b>Activez votre position</b>Pour trouver les pharmacies autour de vous.</div></div>
-        <div class="step"><div class="n">2</div><div class="t"><b>Tapez votre médicament</b>Nom, molécule ou symptôme.</div></div>
-        <div class="step"><div class="n">3</div><div class="t"><b>Commandez et payez</b>Wave, Orange Money, Free Money, espèces.</div></div>
-        <div class="step"><div class="n">4</div><div class="t"><b>Discutez en direct</b>Chat avec la pharmacie.</div></div>
-      </div>
-      <button class="btn" style="margin-top:16px" onclick="getPos()">📍 Activer ma position</button>
+    <div class="ai-hero">
+      <h2>
+        <svg class="ico"><use href="#i-sparkle"/></svg>
+        Assistant Santé
+      </h2>
+      <p>Décrivez vos symptômes, on vous recommande le bon médicament.</p>
+      <button class="btn" onclick="openSymptomChecker()">
+        <svg class="ico"><use href="#i-activity"/></svg>
+        Démarrer le diagnostic
+      </button>
     </div>
+
+    <div class="tip-card" id="tipCard" style="display:none">
+      <b>
+        <svg class="ico"><use href="#i-info"/></svg>
+        Conseil du jour
+      </b>
+      <p id="tipText"></p>
+    </div>
+
+    <div class="card">
+      <h3>
+        <svg class="ico"><use href="#i-qr"/></svg>
+        Actions rapides
+      </h3>
+      <button class="btn soft" onclick="openCmdk()" style="margin-bottom:8px">
+        <svg class="ico"><use href="#i-search"/></svg>
+        Ouvrir la palette de commandes
+      </button>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn outline sm" style="flex:1;margin:0" onclick="openScanner()">
+          <svg class="ico sm"><use href="#i-camera"/></svg>
+          Scanner
+        </button>
+        <button class="btn outline sm" style="flex:1;margin:0" onclick="startVoice()">
+          <svg class="ico sm"><use href="#i-mic"/></svg>
+          Vocal
+        </button>
+      </div>
+      <button class="btn outline sm" style="margin:0" onclick="getPos()">
+        <svg class="ico sm"><use href="#i-location"/></svg>
+        Activer ma position
+      </button>
+    </div>
+
     <div id="result"></div>
   </div>
 </section>
 
-<section class="screen" id="s-mes-commandes">
+<!-- ÉCRAN COMMANDES -->
+<section class="screen" id="s-commandes">
   <div class="wrap">
-    <h2 style="margin-bottom:16px;font-size:20px;font-weight:800;letter-spacing:-.02em">📦 Mes commandes</h2>
-    <div id="mesCommandes"><div class="load"><div class="spinner"></div>Chargement...</div></div>
+    <h2 style="margin-bottom:14px;font-size:18px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:10px">
+      <svg class="ico"><use href="#i-package"/></svg>
+      Mes commandes
+    </h2>
+    <div id="mesCommandes"></div>
   </div>
 </section>
 
-<section class="screen" id="s-chat">
-  <div style="padding:16px">
-    <button class="btn sec" style="margin-bottom:14px" onclick="backFromChat()">← Retour</button>
-    <div class="chat">
-      <div class="chat-head">
-        <div style="min-width:0;flex:1">
-          <b id="chatPhName" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pharmacie</b>
-          <small><span class="online-dot"></span>En direct</small>
-        </div>
-        <div style="text-align:right;font-size:11.5px;opacity:.85;flex-shrink:0;font-weight:600" id="chatCode">—</div>
-      </div>
-      <div class="chat-body" id="chatBody"></div>
-      <div class="chat-input">
-        <button class="cam" onclick="document.getElementById('chatFile').click()">📷</button>
-        <input type="file" id="chatFile" accept="image/*" capture="environment" style="display:none" onchange="sendChatImage(event)">
-        <input type="text" id="chatText" placeholder="Message..." onkeydown="if(event.key==='Enter')sendChatText()">
-        <button onclick="sendChatText()">➤</button>
-      </div>
+<!-- ÉCRAN PROFIL -->
+<section class="screen" id="s-profil">
+  <div class="wrap">
+    <h2 style="margin-bottom:14px;font-size:18px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:10px">
+      <svg class="ico"><use href="#i-user"/></svg>
+      Mon profil
+    </h2>
+
+    <div class="card">
+      <h3>
+        <svg class="ico"><use href="#i-phone"/></svg>
+        Téléphone
+      </h3>
+      <div class="field"><input id="profilTel" type="tel" placeholder="+221 77 123 45 67"></div>
+      <button class="btn" onclick="saveProfil()">
+        <svg class="ico"><use href="#i-check"/></svg>
+        Enregistrer
+      </button>
+    </div>
+
+    <div class="card">
+      <h3>
+        <svg class="ico"><use href="#i-bell"/></svg>
+        Alertes stock
+      </h3>
+      <p style="font-size:12.5px;color:var(--c-60);margin-bottom:12px;font-weight:500">
+        Recevez une notification dès qu'un médicament est disponible.
+      </p>
+      <div id="alertesList"></div>
+    </div>
+
+    <div class="card">
+      <h3>
+        <svg class="ico"><use href="#i-activity"/></svg>
+        Mes statistiques
+      </h3>
+      <div class="stats" id="userStats"></div>
+    </div>
+
+    <div class="card">
+      <h3>
+        <svg class="ico"><use href="#i-info"/></svg>
+        À propos
+      </h3>
+      <p style="font-size:13px;line-height:1.6;color:var(--c-60);font-weight:500">
+        Assistant santé, scanner d'ordonnance, recherche vocale, paiement mobile, chat temps réel.
+      </p>
     </div>
   </div>
 </section>
 
-<section class="screen" id="s-auth">
+<!-- ÉCRAN PHARMACIE (AUTH) -->
+<section class="screen" id="s-pharma">
   <div class="wrap">
-    <div class="card" style="text-align:center;margin-bottom:16px">
-      <div style="font-size:48px;margin-bottom:6px">🏥</div>
-      <h2 style="margin:8px 0;font-size:20px;font-weight:800;letter-spacing:-.02em">Espace Pharmacie</h2>
-      <p style="color:var(--ink-3);font-size:13.5px;margin-top:8px;font-weight:500">Gérez votre stock et recevez les commandes</p>
+    <div class="card" style="text-align:center;margin-bottom:14px">
+      <svg class="ico xl" style="margin:0 auto 10px;color:var(--c)"><use href="#i-hospital"/></svg>
+      <h2 style="margin:6px 0;font-size:18px;font-weight:800">Espace Pharmacie</h2>
+      <p style="color:var(--c-60);font-size:13px;margin-top:6px;font-weight:500">Gérez votre stock</p>
     </div>
     <div class="card">
-      <div style="margin-bottom:16px">
+      <div style="margin-bottom:14px">
         <button class="tab on" id="tLogin" onclick="authTab('login')">Connexion</button>
         <button class="tab" id="tReg" onclick="authTab('reg')">Inscription</button>
       </div>
@@ -850,14 +951,13 @@ header::before{
         <button class="btn" onclick="doLogin()">Se connecter</button>
       </div>
       <div id="fReg" style="display:none">
-        <div class="field"><label>Nom pharmacie *</label><input id="rNom" placeholder="Ex : Pharmacie du Plateau"></div>
+        <div class="field"><label>Nom pharmacie *</label><input id="rNom" placeholder="Pharmacie du Plateau"></div>
         <div class="field"><label>Téléphone *</label><input id="rTel" type="tel" placeholder="+221 77 123 45 67"></div>
-        <div class="field"><label>Mot de passe * (6 car. min)</label><input id="rPass" type="password" placeholder="••••••"></div>
-        <div class="field"><label>Adresse *</label><input id="rAddr" placeholder="Ex : Plateau, Dakar"></div>
-        <div class="field"><label>Numéro Wave/OM (paiements)</label><input id="rPay" type="tel" placeholder="+221 77 123 45 67"></div>
-        <div class="field"><label>Position GPS (cliquez sur la carte) *</label>
-          <div id="mapReg" style="height:200px;border-radius:var(--radius);overflow:hidden"></div>
-          <small id="gpsInfo" style="color:var(--ink-3);font-size:12px;margin-top:8px;display:block;font-weight:500">📍 Cliquez sur la carte pour placer votre pharmacie</small>
+        <div class="field"><label>Mot de passe *</label><input id="rPass" type="password" placeholder="••••••"></div>
+        <div class="field"><label>Adresse *</label><input id="rAddr" placeholder="Plateau, Dakar"></div>
+        <div class="field"><label>Position GPS *</label>
+          <div id="mapReg" style="height:180px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--c-16)"></div>
+          <small id="gpsInfo" style="color:var(--c-60);font-size:11.5px;margin-top:8px;display:block;font-weight:500">Cliquez sur la carte</small>
         </div>
         <button class="btn" onclick="doRegister()">Créer ma pharmacie</button>
       </div>
@@ -865,53 +965,154 @@ header::before{
   </div>
 </section>
 
+<!-- ÉCRAN DASHBOARD -->
 <section class="screen" id="s-dash">
-  <div style="background:linear-gradient(135deg,#0a7d5a 0%,#075c42 100%);color:#fff;padding:16px 20px">
+  <div style="background:var(--c);color:var(--bg);padding:16px 20px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-      <b id="dName" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700">—</b>
-      <button style="background:rgba(255,255,255,.2);color:#fff;padding:7px 13px;border-radius:var(--radius-full);font-size:12px;flex-shrink:0;font-weight:600;border:1px solid rgba(255,255,255,.15)" onclick="logout()">Déconnexion</button>
+      <b id="dName" style="font-size:15px;font-weight:700">—</b>
+      <button style="background:var(--bg);color:var(--c);padding:7px 13px;border-radius:var(--r-full);font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px" onclick="logout()">
+        <svg class="ico sm"><use href="#i-arrow-right"/></svg>
+        Sortir
+      </button>
     </div>
     <div id="dAddr" style="font-size:11.5px;opacity:.85;margin-top:5px;font-weight:500">—</div>
   </div>
   <div class="tab-bar">
-    <button class="tab on" id="tDash" onclick="dashTab('dash')">📊 Stock</button>
-    <button class="tab" id="tAdd" onclick="dashTab('add')">➕ Ajouter</button>
-    <button class="tab" id="tOrd" onclick="dashTab('ord')">🛒 Commandes<span class="badge" id="badgeOrd" style="display:none">0</span></button>
-    <button class="tab" id="tPay" onclick="dashTab('pay')">💰 Paiements</button>
+    <button class="tab on" id="tDash" onclick="dashTab('dash')">
+      <svg class="ico"><use href="#i-pill"/></svg> Stock
+    </button>
+    <button class="tab" id="tAdd" onclick="dashTab('add')">
+      <svg class="ico"><use href="#i-plus"/></svg> Ajouter
+    </button>
+    <button class="tab" id="tOrd" onclick="dashTab('ord')">
+      <svg class="ico"><use href="#i-package"/></svg> Commandes
+      <span class="badge" id="badgeOrd" style="display:none">0</span>
+    </button>
+    <button class="tab" id="tPay" onclick="dashTab('pay')">
+      <svg class="ico"><use href="#i-wallet"/></svg> Paiements
+    </button>
   </div>
   <div class="wrap" id="dashContent"></div>
 </section>
 
-<section class="screen" id="s-about">
-  <div class="wrap">
-    <div class="card">
-      <h3>ℹ️ À propos</h3>
-      <p style="margin-top:10px;font-size:14px;line-height:1.7;color:var(--ink-3);font-weight:500">
-        <b style="color:var(--ink)">Ma Pharmacie</b> vous aide à trouver la pharmacie la plus proche qui a votre médicament. Payez par Wave, Orange Money, Free Money ou espèces. Discutez en direct.
-      </p>
-    </div>
-    <div class="card">
-      <h3>💳 Moyens de paiement</h3>
-      <p style="margin-top:10px;font-size:13.5px;line-height:1.9;color:var(--ink-3);font-weight:500">
-        💵 Espèces<br>📱 Wave<br>🟠 Orange Money<br>🔵 Free Money
-      </p>
-    </div>
-    <div class="card">
-      <h3>📞 Contact</h3>
-      <p style="margin-top:10px;font-size:14px;color:var(--ink-3);font-weight:500">support@mapharmacie.app</p>
+<!-- ÉCRAN CHAT -->
+<section class="screen" id="s-chat">
+  <div style="padding:14px">
+    <button class="btn outline sm" style="margin-bottom:12px" onclick="backFromChat()">
+      <svg class="ico sm"><use href="#i-arrow-left"/></svg>
+      Retour
+    </button>
+    <div class="chat">
+      <div class="chat-head">
+        <div style="min-width:0;flex:1">
+          <b id="chatPhName">Pharmacie</b>
+          <small><span class="online-dot"></span>En direct</small>
+        </div>
+        <div style="font-size:11px;opacity:.85;font-weight:700" id="chatCode">—</div>
+      </div>
+      <div class="chat-body" id="chatBody"></div>
+      <div class="chat-input">
+        <button class="cam" onclick="document.getElementById('chatFile').click()">
+          <svg class="ico"><use href="#i-camera"/></svg>
+        </button>
+        <input type="file" id="chatFile" accept="image/*" capture="environment" style="display:none" onchange="sendChatImage(event)">
+        <input type="text" id="chatText" placeholder="Message..." onkeydown="if(event.key==='Enter')sendChatText()">
+        <button onclick="sendChatText()">
+          <svg class="ico"><use href="#i-send"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item on" id="navClient" onclick="go('client')">
+    <svg class="ico"><use href="#i-home"/></svg>
+    <span>Accueil</span>
+  </button>
+  <button class="nav-item" id="navCmd" onclick="go('commandes')">
+    <svg class="ico"><use href="#i-package"/></svg>
+    <span>Commandes</span>
+    <span class="nav-badge" id="navCmdBadge" style="display:none">0</span>
+  </button>
+  <button class="nav-fab" onclick="openCmdk()">
+    <svg class="ico"><use href="#i-sparkle"/></svg>
+  </button>
+  <button class="nav-item" id="navProfil" onclick="go('profil')">
+    <svg class="ico"><use href="#i-user"/></svg>
+    <span>Profil</span>
+  </button>
+  <button class="nav-item" onclick="openSymptomChecker()">
+    <svg class="ico"><use href="#i-activity"/></svg>
+    <span>Assistant</span>
+  </button>
+</nav>
+
+<!-- COMMAND PALETTE -->
+<div class="cmdk" id="cmdkBg" onclick="if(event.target===this)closeCmdk()">
+  <div class="cmdk-panel">
+    <div class="cmdk-input-wrap">
+      <svg class="ico cmdk-ico" id="cmdkIco"><use href="#i-search"/></svg>
+      <input class="cmdk-input" id="cmdkInput" placeholder="Chercher, commander, scanner..." autocomplete="off" oninput="filterCmds(this.value)" onkeydown="cmdkKey(event)">
+      <div class="cmdk-actions">
+        <button class="cmdk-mic" id="cmdkMic" onclick="cmdkVoice()">
+          <svg class="ico sm"><use href="#i-mic"/></svg>
+        </button>
+        <button class="cmdk-close" onclick="closeCmdk()">
+          <svg class="ico sm"><use href="#i-close"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="cmdk-results" id="cmdkResults"></div>
+    <div class="cmdk-footer">
+      <span><kbd>↑↓</kbd> naviguer</span>
+      <span><kbd>↵</kbd> valider</span>
+      <span><kbd>ESC</kbd> fermer</span>
+    </div>
+  </div>
+</div>
+
+<!-- SCANNER -->
+<div class="scanner-overlay" id="scannerOverlay">
+  <div class="scanner-top">
+    <b><svg class="ico"><use href="#i-camera"/></svg>Scanner une ordonnance</b>
+    <button class="scanner-close" onclick="closeScanner()">
+      <svg class="ico"><use href="#i-close"/></svg>
+    </button>
+  </div>
+  <div class="scanner-view">
+    <div class="scanner-frame"><div class="scanner-line"></div></div>
+  </div>
+  <div class="scanner-bottom">
+    <div class="scanner-status" id="scannerStatus">Alignez l'ordonnance dans le cadre</div>
+    <div class="scanner-progress"><div class="scanner-progress-fill" id="scannerProgress"></div></div>
+    <input type="file" id="scannerFile" accept="image/*" capture="environment" style="display:none" onchange="processScannedImage(event)">
+    <button class="btn" onclick="document.getElementById('scannerFile').click()">
+      <svg class="ico"><use href="#i-camera"/></svg>
+      Capturer
+    </button>
+  </div>
+</div>
+
+<!-- MODAL -->
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalContent"></div>
 </div>
 
-<div id="toast"></div>
+<div id="toasts"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ============================================================
+   ICÔNES
+   ============================================================ */
+function ico(name, cls, size){
+  var c = 'ico' + (cls ? ' ' + cls : '') + (size ? ' ' + size : '');
+  return '<svg class="' + c + '"><use href="#i-' + name + '"/></svg>';
+}
+
 /* ============================================================
    SUPABASE
    ============================================================ */
@@ -923,56 +1124,21 @@ try {
   );
 } catch(e){ console.error(e); }
 
-var userPos = null;
-var session = null;
-var gpsReg = null;
-var mapReg = null;
-var mapRegMarker = null;
-var ordonnanceFile = null;
-var currentCommande = null;
-var chatChannel = null;
-var chatBackScreen = 'client';
+var userPos = null, session = null, gpsReg = null;
+var mapReg = null, mapRegMarker = null;
+var ordonnanceFile = null, currentCommande = null, chatChannel = null;
+var chatBackScreen = 'client', _orderData = null;
+var currentScreen = 'client';
 
 /* ============================================================
-   MOTEUR RECHERCHE INTELLIGENT
+   UTILITAIRES
    ============================================================ */
-var SYNONYMES = {
-  'doliprane':'paracetamol','efferalgan':'paracetamol','dafalgan':'paracetamol',
-  'acetaminophene':'paracetamol','panadol':'paracetamol','tylenol':'paracetamol',
-  'advil':'ibuprofene','nurofen':'ibuprofene','brufen':'ibuprofene',
-  'amoxil':'amoxicilline','clamoxyl':'amoxicilline','augmentin':'amoxicilline',
-  'coartem':'artemether','co-arinate':'artemether','artemether':'coartem',
-  'flagyl':'metronidazole','metronidazol':'metronidazole',
-  'losec':'omeprazole','mopral':'omeprazole',
-  'ventoline':'salbutamol','ventolin':'salbutamol',
-  'vitamine':'vitamine','vit c':'vitamine',
-  'aspirine':'aspirine','aspegic':'aspirine',
-  'zyrtec':'cetirizine','reactine':'cetirizine',
-  'spasfon':'phloroglucinol','smecta':'diosmectite',
-  'imodium':'loperamide','motilium':'domperidone',
-  'clamox':'amoxicilline','penicilline':'amoxicilline'
-};
-
-var CATEGORIES = {
-  'douleur':['paracetamol','ibuprofene','aspirine','tramadol','codeine'],
-  'fievre':['paracetamol','ibuprofene','aspirine'],
-  'tete':['paracetamol','ibuprofene','aspirine'],
-  'antibiotique':['amoxicilline','metronidazole','azithromycine','ciprofloxacine'],
-  'paludisme':['coartem','artemether','quinine','artesunate'],
-  'palu':['coartem','artemether','quinine','artesunate'],
-  'ventre':['omeprazole','metronidazole','diosmectite','phloroglucinol'],
-  'estomac':['omeprazole','diosmectite'],
-  'diarrhee':['loperamide','diosmectite','metronidazole'],
-  'toux':['salbutamol','ambroxol','dextromethorphane'],
-  'respiration':['salbutamol'],
-  'asthme':['salbutamol'],
-  'allergie':['cetirizine','loratadine','desloratadine'],
-  'vitamine':['vitamine'],
-  'fer':['fer','acide folique'],
-  'anemie':['fer','acide folique'],
-  'grippe':['paracetamol','vitamine','cetirizine']
-};
-
+function haptic(ms){ if (navigator.vibrate) try { navigator.vibrate(ms || 10); } catch(e){} }
+function escapeHtml(s){
+  return String(s || '').replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+  });
+}
 function normalize(str){
   return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -985,246 +1151,353 @@ function levenshtein(a, b){
   for (var j = 0; j <= a.length; j++) m[0][j] = j;
   for (var i = 1; i <= b.length; i++){
     for (var j = 1; j <= a.length; j++){
-      if (b.charAt(i-1) === a.charAt(j-1)) m[i][j] = m[i-1][j-1];
-      else m[i][j] = Math.min(m[i-1][j-1]+1, m[i][j-1]+1, m[i-1][j]+1);
+      m[i][j] = b.charAt(i-1) === a.charAt(j-1) ? m[i-1][j-1] : Math.min(m[i-1][j-1]+1, m[i][j-1]+1, m[i-1][j]+1);
     }
   }
   return m[b.length][a.length];
 }
-function scoreMatch(query, text){
-  if (!query || !text) return 0;
-  var q = normalize(query), t = normalize(text);
-  if (!q || !t) return 0;
-  if (t === q) return 100;
-  if (t.indexOf(q) === 0) return 95;
-  if (t.indexOf(q) > -1) return 80;
-  var qWords = q.split(' ').filter(Boolean), tWords = t.split(' ').filter(Boolean);
-  if (qWords.length > 1){
-    var allFound = qWords.every(function(qw){ return tWords.some(function(tw){ return tw.indexOf(qw) >= 0 || levenshtein(qw, tw) <= 2; }); });
-    if (allFound) return 75;
-  }
-  var best = 0;
-  tWords.forEach(function(tw){
-    qWords.forEach(function(qw){
-      var d = levenshtein(qw, tw);
-      var maxLen = Math.max(qw.length, tw.length);
-      var sim = maxLen ? Math.round((1 - d / maxLen) * 100) : 0;
-      if (qw.length >= 5 && d <= 2) sim = Math.max(sim, 60);
-      if (qw.length >= 3 && d <= 1) sim = Math.max(sim, 50);
-      if (sim > best) best = sim;
-    });
-  });
-  return best;
-}
-function expandQuery(q){
-  var n = normalize(q), variantes = [q], mots = n.split(' ');
-  if (SYNONYMES[n]) variantes.push(SYNONYMES[n]);
-  mots.forEach(function(m){ if (SYNONYMES[m]) variantes.push(SYNONYMES[m]); });
-  if (CATEGORIES[n]) CATEGORIES[n].forEach(function(c){ variantes.push(c); });
-  mots.forEach(function(m){ if (CATEGORIES[m]) CATEGORIES[m].forEach(function(c){ variantes.push(c); }); });
-  return Array.from(new Set(variantes));
-}
-function estCategorie(q){ return CATEGORIES[normalize(q)] || null; }
-function escapeHtml(s){
-  return String(s || '').replace(/[&<>"']/g, function(c){ return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; });
-}
-function highlightMatch(text, query){
-  if (!text) return '';
-  var txt = String(text);
-  var q = normalize(query);
-  if (!q) return escapeHtml(txt);
-  var txtNorm = normalize(txt);
-  var used = new Array(txt.length).fill(false);
-  var start = txtNorm.indexOf(q);
-  if (start > -1){
-    for (var k = start; k < start + q.length; k++){ if (k < used.length) used[k] = true; }
-  } else {
-    var qWords = q.split(' ').filter(Boolean);
-    var tWords = txtNorm.split(' ');
-    var pos = 0;
-    tWords.forEach(function(tw){
-      qWords.forEach(function(qw){
-        if (!tw) return;
-        if (tw.indexOf(qw) === 0 || levenshtein(qw, tw) <= 1){
-          for (var j = pos; j < pos + Math.min(tw.length, qw.length); j++){ if (j < used.length) used[j] = true; }
-        }
-      });
-      pos += tw.length + 1;
-    });
-  }
-  var result = '', inBold = false;
-  for (var idx = 0; idx < txt.length; idx++){
-    var ch = txt[idx], esc = escapeHtml(ch);
-    if (used[idx] && !inBold){ result += '<b>'; inBold = true; }
-    if (!used[idx] && inBold){ result += '</b>'; inBold = false; }
-    result += esc;
-  }
-  if (inBold) result += '</b>';
-  return result;
+function toast(msg, type){
+  var c = document.getElementById('toasts');
+  var el = document.createElement('div');
+  el.className = 'toast';
+  var iconName = type === 'err' ? 'alert' : 'check';
+  el.innerHTML = ico(iconName, 'sm') + '<span>' + escapeHtml(msg) + '</span>';
+  c.appendChild(el);
+  setTimeout(function(){ el.classList.add('out'); setTimeout(function(){ el.remove(); }, 300); }, 3000);
 }
 
 /* ============================================================
-   NAVIGATION
+   FUZZY
    ============================================================ */
-function openDrawer(){ document.getElementById('drawer').classList.add('on'); document.getElementById('ov').classList.add('on'); }
-function closeDrawer(){ document.getElementById('drawer').classList.remove('on'); document.getElementById('ov').classList.remove('on'); }
+function fuzzyScore(query, text){
+  if (!query || !text) return 0;
+  var q = normalize(query), t = normalize(text);
+  if (!q || !t) return 0;
+  if (t === q) return 1000;
+  if (t.indexOf(q) === 0) return 900 - t.length;
+  if (t.indexOf(q) > -1) return 700 - t.indexOf(q);
+  var qw = q.split(' ').filter(Boolean), tw = t.split(' ').filter(Boolean);
+  if (qw.length > 1){
+    var allFound = qw.every(function(w){ return tw.some(function(x){ return x.indexOf(w) > -1 || levenshtein(w, x) <= 2; }); });
+    if (allFound) return 600;
+  }
+  var best = 0;
+  tw.forEach(function(x){ qw.forEach(function(w){
+    var d = levenshtein(w, x), ml = Math.max(w.length, x.length);
+    var sim = ml ? Math.round((1 - d / ml) * 100) : 0;
+    if (w.length >= 5 && d <= 2) sim = Math.max(sim, 60);
+    if (sim > best) best = sim;
+  }); });
+  return best * 5;
+}
+function highlightMatches(text, query){
+  if (!text) return '';
+  var txt = String(text), q = normalize(query);
+  if (!q) return escapeHtml(txt);
+  var tn = normalize(txt), used = new Array(txt.length).fill(false);
+  var st = tn.indexOf(q);
+  if (st > -1){ for (var k = st; k < st + q.length; k++) if (k < used.length) used[k] = true; }
+  else {
+    var qw = q.split(' '), tw = tn.split(' '), pos = 0;
+    tw.forEach(function(x){
+      qw.forEach(function(w){
+        if (x.indexOf(w) === 0 || levenshtein(w, x) <= 1){
+          for (var j = pos; j < pos + Math.min(x.length, w.length); j++) if (j < used.length) used[j] = true;
+        }
+      });
+      pos += x.length + 1;
+    });
+  }
+  var r = '', b = false;
+  for (var i = 0; i < txt.length; i++){
+    if (used[i] && !b){ r += '<b>'; b = true; }
+    if (!used[i] && b){ r += '</b>'; b = false; }
+    r += escapeHtml(txt[i]);
+  }
+  if (b) r += '</b>';
+  return r;
+}
+
+/* ============================================================
+   COMMAND PALETTE — SANS DOUBLONS
+   On enlève tout ce qui est déjà dans la bottom nav :
+   - Assistant Santé (dans nav)
+   - Mes commandes (dans nav)
+   - Mon profil (dans nav)
+   - Accueil (dans nav)
+   ============================================================ */
+var CMDS = [
+  { group:'Recherche', id:'search', icon:'search', title:'Rechercher un médicament', desc:'Nom, molécule ou symptôme', kbd:'1',
+    run: function(){ closeCmdk(); go('client'); setTimeout(function(){ document.getElementById('search').focus(); }, 200); },
+    keywords:'chercher trouver medicament paracetamol doliprane search' },
+  { group:'Recherche', id:'voice', icon:'mic', title:'Recherche vocale', desc:'Dites ce que vous cherchez', kbd:'2',
+    run: function(){ closeCmdk(); go('client'); setTimeout(startVoice, 300); },
+    keywords:'voix vocal micro parler dicter' },
+  { group:'Outils', id:'scanner', icon:'camera', title:'Scanner une ordonnance', desc:'Photo → médicaments détectés', kbd:'3',
+    run: function(){ closeCmdk(); openScanner(); },
+    keywords:'scanner photo ordonnance camera ocr image' },
+  { group:'Outils', id:'position', icon:'location', title:'Activer ma position', desc:'Trouver les pharmacies proches', kbd:'4',
+    run: function(){ closeCmdk(); go('client'); setTimeout(getPos, 300); },
+    keywords:'position localisation gps pres autour' },
+  { group:'Pharmacie', id:'pharma', icon:'hospital', title:'Espace Pharmacie', desc:'Connexion ou inscription', kbd:'P',
+    run: function(){ closeCmdk(); go('pharma'); },
+    keywords:'pharmacie pharmacien pro stock gerer connexion inscription' },
+  { group:'Aide', id:'about', icon:'info', title:'À propos', desc:'Infos et contact', kbd:'?',
+    run: function(){ closeCmdk(); showAbout(); },
+    keywords:'info contact aide about help version' }
+];
+
+var cmdkHistory = JSON.parse(localStorage.getItem('mp_cmdk_history') || '[]');
+var selectedIndex = 0;
+var filteredCmds = [];
+var cmdkVoiceActive = false;
+
+function openCmdk(){
+  haptic(15);
+  document.getElementById('cmdkBg').classList.add('on');
+  var input = document.getElementById('cmdkInput');
+  input.value = '';
+  input.placeholder = 'Chercher, commander, scanner...';
+  selectedIndex = 0;
+  var recent = cmdkHistory.slice(0, 2).map(function(id){ return CMDS.find(function(c){ return c.id === id; }); }).filter(Boolean);
+  filteredCmds = recent.map(function(c){ return { cmd:c, isRecent:true }; })
+    .concat(CMDS.filter(function(c){ return recent.indexOf(c) === -1; }).map(function(c){ return { cmd:c }; }));
+  renderCmds('');
+  setTimeout(function(){ input.focus(); }, 120);
+}
+function closeCmdk(){
+  document.getElementById('cmdkBg').classList.remove('on');
+  document.getElementById('cmdkMic').classList.remove('on');
+  cmdkVoiceActive = false;
+}
+async function filterCmds(query){
+  var q = query.trim();
+  var icoEl = document.getElementById('cmdkIco');
+  icoEl.innerHTML = '<use href="#i-' + (/^\d/.test(q) ? 'phone' : 'search') + '"/>';
+
+  var results = [];
+  if (!q){
+    var recent = cmdkHistory.slice(0, 2).map(function(id){ return CMDS.find(function(c){ return c.id === id; }); }).filter(Boolean);
+    results = recent.map(function(c){ return { cmd:c, isRecent:true, score:9999 }; })
+      .concat(CMDS.filter(function(c){ return recent.indexOf(c) === -1; }).map(function(c){ return { cmd:c, score:0 }; }));
+  } else {
+    CMDS.forEach(function(c){
+      var s = Math.max(fuzzyScore(q, c.title), fuzzyScore(q, c.desc), fuzzyScore(q, c.keywords), fuzzyScore(q, c.group));
+      if (s > 100) results.push({ cmd:c, score:s });
+    });
+    if (sb && q.length >= 2){
+      try {
+        var r = await sb.from('stocks').select('nom,dci,prix,qte,ordonnance,pharmacie_id,pharmacies(id,nom)').gt('qte', 0).eq('visible', true).limit(50);
+        if (r.data){
+          var seen = {};
+          r.data.forEach(function(m){
+            var s = Math.max(fuzzyScore(q, m.nom), fuzzyScore(q, m.dci || ''));
+            if (s > 150){
+              var key = normalize(m.nom);
+              if (!seen[key]){
+                seen[key] = true;
+                results.push({
+                  cmd: {
+                    id: 'med_' + key, icon:'pill', title: m.nom,
+                    desc: (m.dci ? m.dci + ' · ' : '') + m.prix + ' FCFA' + (m.pharmacies ? ' · ' + m.pharmacies.nom : ''),
+                    group: 'Médicaments', med: m,
+                    run: function(){
+                      closeCmdk();
+                      go('client');
+                      setTimeout(function(){
+                        var inp = document.getElementById('search');
+                        if (inp) inp.value = m.nom;
+                        if (userPos) search(); else { toast('Activez votre position', 'err'); getPos(); }
+                      }, 300);
+                    }
+                  }, score: s
+                });
+              }
+            }
+          });
+        }
+      } catch(e){}
+    }
+  }
+  results.sort(function(a,b){
+    if (a.isRecent && !b.isRecent) return -1;
+    if (!a.isRecent && b.isRecent) return 1;
+    return b.score - a.score;
+  });
+  filteredCmds = results.slice(0, 12);
+  selectedIndex = 0;
+  renderCmds(q);
+}
+function renderCmds(query){
+  var el = document.getElementById('cmdkResults');
+  if (!filteredCmds.length){
+    el.innerHTML = '<div class="cmdk-empty">' + ico('search', 'lg') + '<b>Aucun résultat</b>Essayez "chercher", "scanner", "pharmacie"</div>';
+    return;
+  }
+  var groups = {};
+  filteredCmds.forEach(function(x, i){
+    var g = x.isRecent ? 'Récents' : (x.cmd.group || 'Résultats');
+    if (!groups[g]) groups[g] = [];
+    groups[g].push({ item:x, index:i });
+  });
+  var html = '';
+  Object.keys(groups).forEach(function(gname){
+    html += '<div class="cmdk-group">' + gname + '</div>';
+    groups[gname].forEach(function(g){
+      var c = g.item.cmd;
+      var i = g.index;
+      var title = query ? highlightMatches(c.title, query) : escapeHtml(c.title);
+      html += '<div class="cmdk-item' + (i === selectedIndex ? ' on' : '') + '" onclick="runCmd(' + i + ')" onmouseenter="selectedIndex=' + i + ';renderCmds(\'' + (query || '').replace(/'/g, "\\'") + '\')">' +
+        '<div class="ci-ico">' + ico(c.icon || 'pill') + '</div>' +
+        '<div class="ci-info">' +
+          '<div class="ci-title">' + title + '</div>' +
+          '<div class="ci-desc">' + escapeHtml(c.desc || '') + '</div>' +
+        '</div>' +
+        (c.kbd ? '<span class="ci-kbd">⌘' + c.kbd + '</span>' : '') +
+      '</div>';
+    });
+  });
+  el.innerHTML = html;
+}
+function cmdkKey(e){
+  if (e.key === 'ArrowDown'){ e.preventDefault(); selectedIndex = Math.min(selectedIndex + 1, filteredCmds.length - 1); renderCmds(e.target.value); scrollToSelected(); }
+  else if (e.key === 'ArrowUp'){ e.preventDefault(); selectedIndex = Math.max(selectedIndex - 1, 0); renderCmds(e.target.value); scrollToSelected(); }
+  else if (e.key === 'Enter'){ e.preventDefault(); runCmd(selectedIndex); }
+  else if (e.key === 'Escape'){ closeCmdk(); }
+}
+function scrollToSelected(){
+  var on = document.querySelector('.cmdk-item.on');
+  if (on) on.scrollIntoView({ block:'nearest', behavior:'smooth' });
+}
+function runCmd(i){
+  var item = filteredCmds[i];
+  if (!item) return;
+  var cmd = item.cmd;
+  haptic(15);
+  if (!cmd.id.startsWith('med_')){
+    cmdkHistory = [cmd.id].concat(cmdkHistory.filter(function(x){ return x !== cmd.id; })).slice(0, 5);
+    localStorage.setItem('mp_cmdk_history', JSON.stringify(cmdkHistory));
+  }
+  if (cmd.run) cmd.run();
+}
+function cmdkVoice(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR){ toast('Vocal non supporté', 'err'); return; }
+  var r = new SR();
+  r.lang = 'fr-FR';
+  r.interimResults = true;
+  var input = document.getElementById('cmdkInput');
+  var btn = document.getElementById('cmdkMic');
+  btn.classList.add('on');
+  cmdkVoiceActive = true;
+  haptic(15);
+  r.onresult = function(e){
+    var txt = '';
+    for (var i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+    input.value = txt;
+    filterCmds(txt);
+    if (e.results[0].isFinal){
+      btn.classList.remove('on');
+      cmdkVoiceActive = false;
+      haptic(20);
+      setTimeout(function(){ runCmd(0); }, 600);
+    }
+  };
+  r.onerror = function(){ btn.classList.remove('on'); cmdkVoiceActive = false; toast('Erreur micro', 'err'); };
+  r.onend = function(){ if (!cmdkVoiceActive) btn.classList.remove('on'); };
+  try { r.start(); } catch(e){ btn.classList.remove('on'); }
+}
+document.addEventListener('keydown', function(e){
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){
+    e.preventDefault();
+    if (document.getElementById('cmdkBg').classList.contains('on')) closeCmdk(); else openCmdk();
+  }
+  if (e.key === '/' && !document.getElementById('cmdkBg').classList.contains('on') &&
+      !(document.activeElement && ['INPUT','TEXTAREA'].indexOf(document.activeElement.tagName) > -1)){
+    e.preventDefault();
+    openCmdk();
+  }
+});
+
+/* ============================================================
+   NAVIGATION + HEADER PHARMA BUTTON
+   ============================================================ */
 function go(name){
-  closeDrawer();
+  haptic(10);
   if (chatChannel && sb){ sb.removeChannel(chatChannel); chatChannel = null; }
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
-  if (name === 'client'){
-    document.getElementById('s-client').classList.add('on');
-    document.getElementById('hSub').style.display = 'block';
-    document.getElementById('hSearch').style.display = 'block';
-  } else if (name === 'mes-commandes'){
-    document.getElementById('hSub').style.display = 'none';
-    document.getElementById('hSearch').style.display = 'none';
-    document.getElementById('s-mes-commandes').classList.add('on');
-    loadMesCommandes();
-  } else if (name === 'pharma'){
-    document.getElementById('hSub').style.display = 'none';
-    document.getElementById('hSearch').style.display = 'none';
-    if (session){ document.getElementById('s-dash').classList.add('on'); loadDashboard(); }
-    else document.getElementById('s-auth').classList.add('on');
-  } else {
-    document.getElementById('hSub').style.display = 'none';
-    document.getElementById('hSearch').style.display = 'none';
-    document.getElementById('s-about').classList.add('on');
-  }
+  currentScreen = name;
+
+  var sub = document.getElementById('hSub');
+  if (name === 'client'){ document.getElementById('s-client').classList.add('on'); sub.style.display = 'block'; }
+  else if (name === 'commandes'){ document.getElementById('s-commandes').classList.add('on'); sub.style.display = 'none'; loadMesCommandes(); }
+  else if (name === 'profil'){ document.getElementById('s-profil').classList.add('on'); sub.style.display = 'none'; loadProfil(); }
+  else if (name === 'pharma'){ sub.style.display = 'none'; if (session){ document.getElementById('s-dash').classList.add('on'); loadDashboard(); } else { document.getElementById('s-pharma').classList.add('on'); } }
+  else if (name === 'chat'){ document.getElementById('s-chat').classList.add('on'); sub.style.display = 'none'; }
+
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('on'); });
+  if (name === 'client') document.getElementById('navClient').classList.add('on');
+  if (name === 'commandes') document.getElementById('navCmd').classList.add('on');
+  if (name === 'profil') document.getElementById('navProfil').classList.add('on');
+
+  updatePharmaBtn();
   window.scrollTo(0,0);
 }
+function updatePharmaBtn(){
+  var btn = document.getElementById('headerPharmaBtn');
+  if (!btn) return;
+  if (session) btn.classList.add('on');
+  else btn.classList.remove('on');
+}
 function backFromChat(){ go(chatBackScreen); }
-function toast(msg){
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('on');
-  clearTimeout(t._t);
-  t._t = setTimeout(function(){ t.classList.remove('on'); }, 2800);
+function showAbout(){
+  document.getElementById('modalContent').innerHTML =
+    '<h2>' + ico('info') + 'À propos</h2>' +
+    '<div class="bar-info"><b>Ma Pharmacie</b><br>Assistant santé, scanner d\'ordonnance, recherche vocale, paiement mobile, chat temps réel.</div>' +
+    '<div class="bar-info"><b>' + ico('wallet', 'sm') + ' Paiement</b><br>Espèces · Wave · Orange Money · Free Money</div>' +
+    '<div class="bar-info"><b>' + ico('phone', 'sm') + ' Contact</b><br>support@mapharmacie.app</div>' +
+    '<button class="btn outline" onclick="closeModal()">Fermer</button>';
+  document.getElementById('modalBg').classList.add('on');
+}
+function closeModal(){
+  document.getElementById('modalBg').classList.remove('on');
+  document.getElementById('modalContent').innerHTML = '';
 }
 
 /* ============================================================
    GÉOLOCALISATION
    ============================================================ */
 function getPos(){
-  if (!navigator.geolocation){ toast('GPS non supporté'); return; }
-  toast('Recherche de votre position...');
+  haptic(15);
+  if (!navigator.geolocation){ toast('GPS non supporté', 'err'); return; }
+  toast('Localisation en cours...', 'ok');
   navigator.geolocation.getCurrentPosition(function(p){
     userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
-    toast('✅ Position détectée');
-    if (document.getElementById('search').value.length >= 2) search();
-  }, function(){ toast('❌ Localisation refusée'); },
-  { enableHighAccuracy:true, timeout:10000 });
+    toast('Position détectée', 'ok');
+    haptic(20);
+  }, function(){ toast('Position refusée', 'err'); }, { enableHighAccuracy:true, timeout:10000 });
 }
 
 /* ============================================================
-   SUGGESTIONS
+   RECHERCHE VOCALE
    ============================================================ */
-var searchT;
-var history = JSON.parse(localStorage.getItem('mp_history') || '[]');
-
-document.getElementById('search').addEventListener('input', function(){
-  var q = this.value.trim().toLowerCase();
-  document.getElementById('sClear').classList.toggle('on', q.length > 0);
-  clearTimeout(searchT);
-  if (q.length < 1){ hideSugg(); return; }
-  searchT = setTimeout(function(){ showSuggestions(q); }, 80);
-});
-document.getElementById('search').addEventListener('keydown', function(e){
-  if (e.key === 'Enter'){ hideSugg(); search(); }
-});
-function hideSugg(){ document.getElementById('sugg').classList.remove('on'); }
-function clearSearch(){
-  document.getElementById('search').value = '';
-  document.getElementById('sClear').classList.remove('on');
-  hideSugg();
-  document.getElementById('result').innerHTML = '';
+function startVoice(){
+  haptic(15);
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR){ toast('Non supporté', 'err'); return; }
+  var r = new SR();
+  r.lang = 'fr-FR';
+  toast('Parlez...', 'ok');
+  r.onresult = function(e){
+    var txt = e.results[0][0].transcript;
+    haptic(20);
+    toast('Recherche : ' + txt, 'ok');
+    var inp = document.getElementById('search');
+    if (inp){ inp.value = txt; if (userPos) search(); }
+  };
+  r.onerror = function(){ toast('Erreur micro', 'err'); };
+  try { r.start(); } catch(e){}
 }
-
-async function showSuggestions(q){
-  var box = document.getElementById('sugg');
-  if (!q || q.length < 1){ box.classList.remove('on'); return; }
-  var html = '';
-  var nq = normalize(q);
-  var variantes = expandQuery(q);
-  var cat = estCategorie(q);
-
-  var hist = history.filter(function(h){ return scoreMatch(q, h) > 40; }).slice(0, 2);
-  if (hist.length){
-    html += '<div class="sugg-head">🕒 Recherches récentes</div>';
-    html += hist.map(function(h){
-      return '<div class="sugg-item" onclick="pickSuggestion(\'' + h.replace(/'/g,"\\'") + '\')">' +
-        '<span class="sname">🕒 ' + highlightMatch(h, q) + '</span>' +
-        '<span class="sright"><span class="sarr">↗</span></span></div>';
-    }).join('');
-  }
-
-  if (sb){
-    var r = await sb.from('stocks').select('nom,dci,ordonnance,prix').gt('qte', 0).eq('visible', true).limit(300);
-    if (r.data && r.data.length){
-      var scored = [], seen = {};
-      r.data.forEach(function(m){
-        var key = normalize(m.nom);
-        if (seen[key]) return;
-        var s1 = scoreMatch(q, m.nom);
-        var s2 = scoreMatch(q, m.dci || '');
-        var s3 = 0;
-        variantes.forEach(function(v){
-          s3 = Math.max(s3, scoreMatch(v, m.nom));
-          s3 = Math.max(s3, scoreMatch(v, m.dci || ''));
-        });
-        var score = Math.max(s1, s2, s3);
-        if (key.indexOf(nq) === 0) score = Math.max(score, 92);
-        if (cat){
-          var medNorm = normalize(m.nom + ' ' + (m.dci || ''));
-          if (cat.some(function(t){ return medNorm.indexOf(t) > -1; })) score = Math.max(score, 70);
-        }
-        if (score >= 40){ seen[key] = true; scored.push({ med: m, score: score }); }
-      });
-      scored.sort(function(a,b){ return b.score - a.score; });
-      scored = scored.slice(0, 8);
-      if (scored.length){
-        var titre = cat ? '🎯 Résultats pour "' + escapeHtml(q) + '"' : '💊 Médicaments';
-        html += '<div class="sugg-head">' + titre + '</div>';
-        html += scored.map(function(x){
-          var m = x.med;
-          var safe = m.nom.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-          var hl = highlightMatch(m.nom, q);
-          var dciHtml = m.dci ? '<span class="sdci">(' + highlightMatch(m.dci, q) + ')</span>' : '';
-          var tag = m.ordonnance ? '<span class="stag ord">📋</span>' : '<span class="stag">Sans ord.</span>';
-          return '<div class="sugg-item" onclick="pickSuggestion(\'' + safe + '\')">' +
-            '<span class="sname">' + hl + dciHtml + '</span>' +
-            '<span class="sright">' + tag + '<span class="sarr">→</span></span></div>';
-        }).join('');
-      } else {
-        var correction = null;
-        if (history.length){
-          var best = null;
-          history.forEach(function(h){
-            var s = scoreMatch(q, h);
-            if (s > 50 && (!best || s > best.s)) best = { h: h, s: s };
-          });
-          if (best) correction = best.h;
-        }
-        html += '<div class="sugg-empty">😕 Aucun médicament pour "<b>' + escapeHtml(q) + '</b>"' +
-          (correction ? '<div class="sugg-correction">Vouliez-vous dire <b onclick="pickSuggestion(\'' + correction.replace(/'/g,"\\'") + '\')">' + escapeHtml(correction) + '</b> ?</div>' : '') + '</div>';
-      }
-    }
-  }
-  html += '<div class="sugg-hint">💡 Tapez le nom, la molécule (DCI) ou un symptôme</div>';
-  box.innerHTML = html;
-  box.classList.add('on');
-}
-function pickSuggestion(nom){
-  document.getElementById('search').value = nom;
-  document.getElementById('sClear').classList.add('on');
-  hideSugg();
-  history = [nom].concat(history.filter(function(h){ return h !== nom; })).slice(0, 8);
-  localStorage.setItem('mp_history', JSON.stringify(history));
-  if (userPos) search();
-}
-document.addEventListener('click', function(e){
-  if (!e.target.closest('.search-wrap')) setTimeout(hideSugg, 100);
-});
 
 /* ============================================================
    RECHERCHE
@@ -1233,37 +1506,18 @@ async function search(){
   var q = document.getElementById('search').value.trim();
   if (!q || !userPos || !sb) return;
   var el = document.getElementById('result');
-  el.innerHTML = '<div class="card"><div class="load"><div class="spinner"></div>Recherche intelligente...</div></div>';
-  var nq = normalize(q);
-  var variantes = expandQuery(q);
-  var cat = estCategorie(q);
+  el.innerHTML = '<div class="card"><div class="skel skel-line lg"></div><div class="skel skel-line sm"></div></div>';
 
-  var r = await sb.from('stocks')
-    .select('id,nom,dci,prix,qte,ordonnance,pharmacie_id,pharmacies(id,nom,adresse,tel,lat,lng,garde,delivery,ouv,ferm)')
-    .gt('qte', 0).eq('visible', true).limit(500);
+  var r = await sb.from('stocks').select('id,nom,dci,prix,qte,ordonnance,pharmacie_id,pharmacies(id,nom,adresse,tel,lat,lng,garde,delivery,ouv,ferm)').gt('qte', 0).eq('visible', true).limit(500);
+  if (r.error || !r.data || !r.data.length){ el.innerHTML = '<div class="card empty">' + ico('search', 'xl') + '<p>Aucun médicament.</p></div>'; return; }
 
-  if (r.error){ el.innerHTML = '<div class="card" style="color:var(--danger)">Erreur : ' + r.error.message + '</div>'; return; }
-  if (!r.data || !r.data.length){
-    el.innerHTML = '<div class="card empty"><div class="icon">🔍</div><p>Aucun médicament disponible.</p></div>';
-    return;
-  }
   var scored = r.data.filter(function(x){ return x.pharmacies; }).map(function(m){
-    var s1 = scoreMatch(q, m.nom), s2 = scoreMatch(q, m.dci || ''), s3 = 0;
-    variantes.forEach(function(v){
-      s3 = Math.max(s3, scoreMatch(v, m.nom));
-      s3 = Math.max(s3, scoreMatch(v, m.dci || ''));
-    });
-    var score = Math.max(s1, s2, s3);
-    if (cat){
-      var medNorm = normalize(m.nom + ' ' + (m.dci || ''));
-      if (cat.some(function(t){ return medNorm.indexOf(t) > -1; })) score = Math.max(score, 70);
-    }
-    return { item: m, score: score };
-  }).filter(function(x){ return x.score >= 40; }).sort(function(a,b){ return b.score - a.score; });
+    return { item:m, score: Math.max(fuzzyScore(q, m.nom), fuzzyScore(q, m.dci || '')) };
+  }).filter(function(x){ return x.score > 100; }).sort(function(a,b){ return b.score - a.score; });
 
   if (!scored.length){
-    el.innerHTML = '<div class="card empty"><div class="icon">🔍</div><p>Aucun résultat pour "<b>' + escapeHtml(q) + '</b>"</p><p style="margin-top:10px;font-size:13px;color:var(--warning);font-weight:500">💡 Essayez le nom ou un symptôme (douleur, fièvre...).</p></div>';
-    return;
+    el.innerHTML = '<div class="card empty">' + ico('search', 'xl') + '<p>Aucun résultat pour "<b>' + escapeHtml(q) + '</b>"</p></div>';
+    haptic(30); return;
   }
   var enriched = scored.map(function(x){
     var m = x.item, p = m.pharmacies;
@@ -1272,73 +1526,60 @@ async function search(){
     var dLng = (p.lng - userPos.lng) * Math.PI / 180;
     var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(userPos.lat*Math.PI/180)*Math.cos(p.lat*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
     var d = 2 * R * Math.asin(Math.sqrt(a));
-    return { med: m, ph: p, dist: d, score: x.score };
-  }).sort(function(a, b){
-    if (Math.abs(a.score - b.score) > 15) return b.score - a.score;
-    return a.dist - b.dist;
-  });
-  var parPharmacie = {}, finalList = [];
-  enriched.forEach(function(e){
-    if (!parPharmacie[e.ph.id]){ parPharmacie[e.ph.id] = true; finalList.push(e); }
-  });
+    return { med:m, ph:p, dist:d, score:x.score };
+  }).sort(function(a, b){ if (Math.abs(a.score - b.score) > 200) return b.score - a.score; return a.dist - b.dist; });
+  var pp = {}, finalList = [];
+  enriched.forEach(function(e){ if (!pp[e.ph.id]){ pp[e.ph.id] = true; finalList.push(e); } });
   finalList = finalList.slice(0, 5);
-  renderSearchResults(finalList, q, cat);
+  renderResults(finalList, q);
+  haptic(15);
 }
-
-function renderSearchResults(list, query, cat){
+function renderResults(list, query){
   var el = document.getElementById('result');
-  var html = '';
-  if (cat) html += '<div class="bar-info">🎯 Résultats pour <b>"' + escapeHtml(query) + '"</b> (catégorie : ' + cat.join(', ') + ')</div>';
-  else if (list.length > 1) html += '<div style="text-align:center;margin-bottom:14px;font-size:12.5px;color:var(--ink-3);font-weight:600">' + list.length + ' pharmacies trouvées</div>';
-
   var best = list[0];
   var km = best.dist < 1 ? Math.round(best.dist*1000) + ' m' : best.dist.toFixed(1) + ' km';
   var h = new Date().getHours();
   var ouvert = (best.ph.ouv === 0 && best.ph.ferm === 24) || (h >= best.ph.ouv && h < best.ph.ferm);
 
-  html +=
-    '<div class="res">' +
-      '<div class="res-h">' +
-        '<div style="font-size:10.5px;opacity:.85;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px">Meilleur résultat</div>' +
-        '<b>' + escapeHtml(best.med.nom) + '</b>' +
-        (best.med.dci ? '<div style="font-size:12.5px;opacity:.85;margin-top:4px;font-weight:500">' + escapeHtml(best.med.dci) + '</div>' : '') +
-        '<div style="font-size:13px;opacity:.9;margin-top:8px;font-weight:500">' + (best.med.ordonnance ? '📋 Ordonnance requise' : '✓ Sans ordonnance') + '</div>' +
+  var html = '<div class="res">' +
+    '<div class="res-h">' +
+      '<div class="rlabel">Meilleur résultat</div>' +
+      '<b>' + escapeHtml(best.med.nom) + '</b>' +
+      (best.med.dci ? '<div class="dci">' + escapeHtml(best.med.dci) + '</div>' : '') +
+      '<div class="ord">' + ico(best.med.ordonnance ? 'alert' : 'check', 'sm') + (best.med.ordonnance ? 'Ordonnance requise' : 'Sans ordonnance') + '</div>' +
+    '</div>' +
+    '<div id="map"></div>' +
+    '<div class="res-b">' +
+      '<div style="font-size:10.5px;color:var(--c-60);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-bottom:8px">Pharmacie la plus proche</div>' +
+      '<b style="font-size:17px;display:block;margin-bottom:8px;font-weight:800">' + escapeHtml(best.ph.nom) + '</b>' +
+      '<div style="font-size:13px;color:var(--c-60);line-height:1.55;margin-bottom:14px;display:flex;flex-direction:column;gap:4px">' +
+        '<div style="display:flex;align-items:center;gap:6px">' + ico('pin', 'sm') + '<span>' + escapeHtml(best.ph.adresse) + '</span></div>' +
+        '<div style="display:flex;align-items:center;gap:6px">' + ico('phone', 'sm') + '<span>' + escapeHtml(best.ph.tel) + '</span></div>' +
       '</div>' +
-      '<div id="map"></div>' +
-      '<div class="res-b">' +
-        '<div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:8px">Pharmacie la plus proche</div>' +
-        '<b style="font-size:18px;display:block;margin-bottom:8px;font-weight:800;letter-spacing:-.02em">' + escapeHtml(best.ph.nom) + '</b>' +
-        '<div style="font-size:13.5px;color:var(--ink-3);line-height:1.6;margin-bottom:16px;font-weight:500">📍 ' + escapeHtml(best.ph.adresse) + '<br>📞 ' + escapeHtml(best.ph.tel) + '</div>' +
-        '<div style="display:flex;gap:10px;margin-bottom:16px">' +
-          '<div style="flex:1;text-align:center;padding:12px 8px;background:var(--primary-light);border-radius:var(--radius)"><b style="color:var(--primary-dark);font-size:16px;font-weight:800;letter-spacing:-.02em">' + km + '</b><br><small style="font-size:10px;color:var(--primary-dark);opacity:.75;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Distance</small></div>' +
-          '<div style="flex:1;text-align:center;padding:12px 8px;background:var(--primary-light);border-radius:var(--radius)"><b style="color:var(--primary-dark);font-size:16px;font-weight:800;letter-spacing:-.02em">' + Math.round(best.dist/25*60) + ' min</b><br><small style="font-size:10px;color:var(--primary-dark);opacity:.75;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Trajet</small></div>' +
-          '<div style="flex:1;text-align:center;padding:12px 8px;background:var(--primary-light);border-radius:var(--radius)"><b style="color:var(--primary-dark);font-size:16px;font-weight:800;letter-spacing:-.02em">' + best.med.qte + '</b><br><small style="font-size:10px;color:var(--primary-dark);opacity:.75;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Stock</small></div>' +
-        '</div>' +
-        '<div style="margin-bottom:16px">' +
-          (ouvert ? '<span class="tag">● Ouvert</span>' : '<span class="tag ferme">● Fermé</span>') +
-          (best.ph.garde ? '<span class="tag garde">🌙 De garde</span>' : '') +
-          (best.ph.delivery ? '<span class="tag">🛵 Livraison</span>' : '') +
-        '</div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:16px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--line-2)">' +
-          '<span style="color:var(--ink-3);font-weight:600;font-size:13.5px">Prix</span>' +
-          '<span class="price">' + best.med.prix + ' FCFA</span>' +
-        '</div>' +
-        '<button class="btn" onclick="openOrder(\'' + best.ph.id + '\',\'' + best.med.id + '\',\'' + escapeHtml(best.med.nom).replace(/'/g,"\\'") + '\',' + best.med.prix + ',' + best.med.ordonnance + ',\'' + (best.ph.tel || '') + '\')">🛒 Commander</button>' +
-        '<div style="display:flex;gap:10px">' +
-          '<button class="btn sec" style="margin:0" onclick="window.location.href=\'tel:' + best.ph.tel.replace(/\s/g,'') + '\'">📞 Appeler</button>' +
-          '<button class="btn sec" style="margin:0" onclick="window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + best.ph.lat + ',' + best.ph.lng + '\')">🧭 Itinéraire</button>' +
-        '</div>' +
+      '<div style="display:flex;gap:8px;margin-bottom:14px">' +
+        '<div style="flex:1;text-align:center;padding:12px 6px;background:var(--c-08);border-radius:var(--r)"><b style="color:var(--c);font-size:15px;font-weight:800">' + km + '</b><br><small style="font-size:9px;color:var(--c-60);text-transform:uppercase;font-weight:700">Distance</small></div>' +
+        '<div style="flex:1;text-align:center;padding:12px 6px;background:var(--c-08);border-radius:var(--r)"><b style="color:var(--c);font-size:15px;font-weight:800">' + Math.round(best.dist/25*60) + ' min</b><br><small style="font-size:9px;color:var(--c-60);text-transform:uppercase;font-weight:700">Trajet</small></div>' +
+        '<div style="flex:1;text-align:center;padding:12px 6px;background:var(--c-08);border-radius:var(--r)"><b style="color:var(--c);font-size:15px;font-weight:800">' + best.med.qte + '</b><br><small style="font-size:9px;color:var(--c-60);text-transform:uppercase;font-weight:700">Stock</small></div>' +
       '</div>' +
-    '</div>';
+      '<div style="margin-bottom:14px">' +
+        (ouvert ? '<span class="tag"><span class="dot"></span>Ouvert</span>' : '<span class="tag"><span class="dot"></span>Fermé</span>') +
+        (best.ph.garde ? '<span class="tag"><span class="dot"></span>De garde</span>' : '') +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding:14px;background:var(--c-04);border-radius:var(--r);border:1px solid var(--c-12)"><span style="color:var(--c-60);font-weight:600;font-size:13px">Prix</span><span class="price">' + best.med.prix + ' FCFA</span></div>' +
+      '<button class="btn" onclick="openOrder(\'' + best.ph.id + '\',\'' + best.med.id + '\',\'' + escapeHtml(best.med.nom).replace(/'/g,"\\'") + '\',' + best.med.prix + ',' + best.med.ordonnance + ',\'' + (best.ph.tel || '') + '\')">' + ico('package') + 'Commander</button>' +
+      '<div style="display:flex;gap:8px">' +
+        '<button class="btn outline sm" style="margin:0" onclick="window.location.href=\'tel:' + best.ph.tel.replace(/\s/g,'') + '\'">' + ico('phone', 'sm') + 'Appeler</button>' +
+        '<button class="btn outline sm" style="margin:0" onclick="window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + best.ph.lat + ',' + best.ph.lng + '\')">' + ico('pin', 'sm') + 'Itinéraire</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
 
   if (list.length > 1){
-    html += '<div class="card"><h3>🏥 Autres pharmacies (' + (list.length - 1) + ')</h3>';
+    html += '<div class="card"><h3>' + ico('hospital') + 'Autres pharmacies</h3>';
     html += list.slice(1).map(function(e){
       var km2 = e.dist < 1 ? Math.round(e.dist*1000) + ' m' : e.dist.toFixed(1) + ' km';
-      return '<div class="prod">' +
-        '<div class="info"><b>' + escapeHtml(e.ph.nom) + '</b>' +
-          '<small>📍 ' + km2 + ' • ' + e.med.prix + ' FCFA</small></div>' +
-        '<button class="btn" style="width:auto;padding:9px 14px;margin:0;font-size:12.5px" onclick="event.stopPropagation();openOrder(\'' + e.ph.id + '\',\'' + e.med.id + '\',\'' + escapeHtml(e.med.nom).replace(/'/g,"\\'") + '\',' + e.med.prix + ',' + e.med.ordonnance + ',\'' + (e.ph.tel || '') + '\')">Commander</button></div>';
+      return '<div class="prod"><div class="info"><b>' + escapeHtml(e.ph.nom) + '</b><small>' + km2 + ' · ' + e.med.prix + ' FCFA</small></div>' +
+        '<button class="btn sm" style="width:auto;padding:8px 12px;margin:0;font-size:12px" onclick="openOrder(\'' + e.ph.id + '\',\'' + e.med.id + '\',\'' + escapeHtml(e.med.nom).replace(/'/g,"\\'") + '\',' + e.med.prix + ',' + e.med.ordonnance + ',\'' + (e.ph.tel || '') + '\')">Commander</button></div>';
     }).join('');
     html += '</div>';
   }
@@ -1349,102 +1590,228 @@ function renderSearchResults(list, query, cat){
     var map = L.map('map', { zoomControl:false, attributionControl:false, dragging:false }).setView([best.ph.lat, best.ph.lng], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     list.slice(0, 5).forEach(function(e, i){
-      var ic = L.divIcon({
-        className:'',
-        html:'<div style="background:' + (i === 0 ? '#0a7d5a' : '#6b7a74') + ';color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.25)">' + (i+1) + '</div>',
-        iconSize:[28,28], iconAnchor:[14,14]
-      });
+      var ic = L.divIcon({ className:'', html:'<div style="background:#0a7d5a;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;border:3px solid #fff;opacity:' + (i === 0 ? '1' : '.5') + '">' + (i+1) + '</div>', iconSize:[26,26], iconAnchor:[13,13] });
       L.marker([e.ph.lat, e.ph.lng], {icon:ic}).addTo(map);
     });
     if (userPos){
-      L.circleMarker([userPos.lat, userPos.lng], {radius:7, color:'#fff', weight:3, fillColor:'#2563eb', fillOpacity:1}).addTo(map);
-      var bounds = L.latLngBounds([[best.ph.lat, best.ph.lng],[userPos.lat, userPos.lng]]);
-      list.slice(0, 5).forEach(function(e){ bounds.extend([e.ph.lat, e.ph.lng]); });
-      map.fitBounds(bounds, {padding:[30,30]});
+      L.circleMarker([userPos.lat, userPos.lng], {radius:6, color:'#0a7d5a', weight:3, fillColor:'#fff', fillOpacity:1}).addTo(map);
+      var b = L.latLngBounds([[best.ph.lat, best.ph.lng],[userPos.lat, userPos.lng]]);
+      list.slice(0, 5).forEach(function(e){ b.extend([e.ph.lat, e.ph.lng]); });
+      map.fitBounds(b, {padding:[30,30]});
     }
   }, 100);
 }
 
 /* ============================================================
-   COMMANDE
+   ASSISTANT SANTÉ
    ============================================================ */
-var _orderData = null;
-function openOrder(phId, stockId, medNom, prix, ordRequise, phTel){
-  ordonnanceFile = null;
-  _orderData = { phId:phId, stockId:stockId, medNom:medNom, prix:prix, ordRequise:ordRequise, phTel:phTel, codePromo:null, remise:0, mode:'cash' };
-  var lastTel = localStorage.getItem('mp_patient_tel') || '';
+var SYMPTOMES = {
+  'fievre': { icon:'thermometer', label:'Fièvre', drugs:['paracetamol','ibuprofene'], conseil:'Reposez-vous, buvez beaucoup d\'eau.' },
+  'tete': { icon:'brain', label:'Mal de tête', drugs:['paracetamol','ibuprofene'], conseil:'Repos dans un endroit calme.' },
+  'douleur': { icon:'activity', label:'Douleur', drugs:['paracetamol','ibuprofene'], conseil:'Antidouleur simple.' },
+  'toux': { icon:'wind', label:'Toux', drugs:['salbutamol','ambroxol'], conseil:'Hydratez-vous.' },
+  'ventre': { icon:'drop', label:'Mal de ventre', drugs:['omeprazole','diosmectite'], conseil:'Évitez les aliments épicés.' },
+  'diarrhee': { icon:'drop', label:'Diarrhée', drugs:['loperamide','diosmectite'], conseil:'Buvez beaucoup d\'eau.' },
+  'allergie': { icon:'flower', label:'Allergie', drugs:['cetirizine','loratadine'], conseil:'Évitez l\'allergène.' },
+  'palu': { icon:'bug', label:'Paludisme', drugs:['coartem','artemether'], conseil:'Consultez rapidement.' },
+  'fatigue': { icon:'battery', label:'Fatigue', drugs:['vitamine','fer'], conseil:'Vérifiez votre taux de fer.' },
+  'asthme': { icon:'wind', label:'Respiration', drugs:['salbutamol'], conseil:'Consultez en urgence si crise.' }
+};
+var selectedSymptoms = [];
 
-  var html =
-    '<h2>🛒 Commander</h2>' +
-    '<div style="background:var(--bg);margin-bottom:16px;padding:14px;border-radius:var(--radius)">' +
-      '<b style="font-size:15px;display:block">' + escapeHtml(medNom) + '</b>' +
-      '<div style="font-size:13px;color:var(--ink-3);margin-top:5px;font-weight:500">Prix : <b style="color:var(--primary);font-weight:800">' + prix + '</b> FCFA</div>' +
-      '<div id="remiseInfo" style="display:none;font-size:12.5px;color:var(--primary);margin-top:6px;font-weight:600">🎟️ Remise appliquée</div>' +
-      '<div class="codepromo"><input id="oPromo" placeholder="CODE PROMO"><button onclick="applyPromo()">Appliquer</button></div>' +
-    '</div>' +
-    '<div class="field"><label>Votre numéro de téléphone *</label><input id="oTel" type="tel" placeholder="+221 77 123 45 67" value="' + lastTel + '"></div>';
-  if (ordRequise) html += '<div class="bar-info warn">⚠️ Ordonnance obligatoire pour ce médicament.</div>';
+function openSymptomChecker(){
+  haptic(15);
+  selectedSymptoms = [];
+  var html = '<h2>' + ico('sparkle') + 'Assistant Santé</h2>' +
+    '<div class="bar-info">Sélectionnez vos symptômes, on vous recommande les médicaments.</div>' +
+    '<div class="symptom-grid" id="symGrid">';
+  Object.keys(SYMPTOMES).forEach(function(k){
+    var s = SYMPTOMES[k];
+    html += '<div class="symptom-btn" data-sym="' + k + '" onclick="toggleSymptom(this)"><div class="si">' + ico(s.icon) + '</div>' + s.label + '</div>';
+  });
+  html += '</div>' +
+    '<button class="btn" style="margin-top:14px" onclick="runDiagnosis()">' + ico('activity') + 'Analyser</button>' +
+    '<div id="diagResult" style="margin-top:12px"></div>' +
+    '<button class="close-modal" onclick="closeModal()" style="margin-top:8px">Fermer</button>';
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalBg').classList.add('on');
+}
+function toggleSymptom(el){
+  haptic(10);
+  var k = el.dataset.sym;
+  var i = selectedSymptoms.indexOf(k);
+  if (i > -1){ selectedSymptoms.splice(i, 1); el.classList.remove('on'); }
+  else { selectedSymptoms.push(k); el.classList.add('on'); }
+}
+async function runDiagnosis(){
+  if (!selectedSymptoms.length){ toast('Sélectionnez au moins un symptôme', 'err'); return; }
+  haptic(20);
+  var res = document.getElementById('diagResult');
+  res.innerHTML = '<div class="skel" style="height:60px;margin-bottom:8px"></div><div class="skel skel-line sm"></div>';
+
+  var allDrugs = [], conseils = [];
+  selectedSymptoms.forEach(function(k){
+    var s = SYMPTOMES[k];
+    if (!s) return;
+    s.drugs.forEach(function(d){ if (allDrugs.indexOf(d) === -1) allDrugs.push(d); });
+    conseils.push(s.conseil);
+  });
+
+  var r = await sb.from('stocks').select('nom,dci').gt('qte', 0).eq('visible', true).limit(500);
+  var found = [], seen = {};
+  if (r.data){
+    r.data.forEach(function(m){
+      var hay = normalize(m.nom + ' ' + (m.dci || ''));
+      allDrugs.forEach(function(d){
+        if (hay.indexOf(d) > -1){
+          var k = normalize(m.nom);
+          if (!seen[k]){ seen[k] = true; found.push(m); }
+        }
+      });
+    });
+  }
+
+  var html = '<div class="bar-info"><b>Diagnostic</b><br>' + selectedSymptoms.map(function(k){ return SYMPTOMES[k].label; }).join(' · ') + '</div>';
+  if (found.length){
+    html += '<div style="font-size:11px;color:var(--c-60);margin-bottom:6px;font-weight:800;text-transform:uppercase;letter-spacing:.06em">Recommandés</div>';
+    html += found.slice(0, 4).map(function(m){
+      var safe = m.nom.replace(/'/g,"\\'");
+      return '<div class="prod" style="cursor:pointer" onclick="closeModal();go(\'client\');setTimeout(function(){document.getElementById(\'search\').value=\'' + safe + '\';search()},300)">' +
+        '<div class="info"><b>' + escapeHtml(m.nom) + '</b>' + (m.dci ? '<small>' + escapeHtml(m.dci) + '</small>' : '') + '</div>' +
+        ico('sparkle') + '</div>';
+    }).join('');
+  }
+  html += conseils.slice(0, 3).map(function(c){ return '<div class="tip-card"><b>' + ico('info', 'sm') + 'Conseil</b><p>' + c + '</p></div>'; }).join('');
+  html += '<div style="font-size:11px;color:var(--c-60);text-align:center;margin-top:10px;font-weight:500">Ne remplace pas un avis médical</div>';
+  res.innerHTML = html;
+  haptic(15);
+}
+
+/* ============================================================
+   SCANNER
+   ============================================================ */
+function openScanner(){
+  haptic(15);
+  document.getElementById('scannerOverlay').classList.add('on');
+  document.getElementById('scannerStatus').textContent = 'Alignez l\'ordonnance';
+  document.getElementById('scannerProgress').style.width = '0%';
+}
+function closeScanner(){ document.getElementById('scannerOverlay').classList.remove('on'); }
+async function processScannedImage(e){
+  var f = e.target.files[0];
+  if (!f) return;
+  var st = document.getElementById('scannerStatus');
+  var pr = document.getElementById('scannerProgress');
+  st.textContent = 'Analyse en cours...';
+  pr.style.width = '20%';
+  haptic(20);
+  try {
+    var result = await Tesseract.recognize(f, 'fra', {
+      logger: function(m){
+        if (m.status === 'recognizing text'){
+          var p = 20 + Math.round(m.progress * 70);
+          pr.style.width = p + '%';
+          st.textContent = 'Reconnaissance : ' + Math.round(m.progress * 100) + '%';
+        }
+      }
+    });
+    var text = result.data.text || '';
+    pr.style.width = '100%';
+    st.textContent = 'Texte détecté';
+    haptic(30);
+
+    var words = text.toLowerCase().split(/[\s,;.:\n]+/).filter(function(w){ return w.length > 4; });
+    var matches = [];
+    if (sb){
+      var r = await sb.from('stocks').select('nom,dci').gt('qte', 0).eq('visible', true).limit(500);
+      if (r.data){
+        r.data.forEach(function(m){
+          var mNorm = normalize(m.nom), dNorm = normalize(m.dci || '');
+          var found = words.some(function(w){
+            return mNorm.indexOf(w) > -1 || dNorm.indexOf(w) > -1 || (w.length > 5 && levenshtein(w, mNorm.split(' ')[0]) <= 2);
+          });
+          if (found && matches.indexOf(m.nom) === -1) matches.push(m.nom);
+        });
+      }
+    }
+    closeScanner();
+    var html = '<h2>' + ico('camera') + 'Résultat du scan</h2>' +
+      '<div class="bar-info">' + escapeHtml(text.substring(0, 250)) + (text.length > 250 ? '...' : '') + '</div>';
+    if (matches.length){
+      html += '<div style="font-size:11.5px;font-weight:800;color:var(--c-60);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Médicaments détectés</div>';
+      html += matches.slice(0, 8).map(function(m){
+        var safe = m.replace(/'/g,"\\'");
+        return '<div class="prod" style="cursor:pointer" onclick="closeModal();go(\'client\');setTimeout(function(){document.getElementById(\'search\').value=\'' + safe + '\';search()},300)"><div class="info"><b>' + escapeHtml(m) + '</b></div>' + ico('sparkle') + '</div>';
+      }).join('');
+    } else {
+      html += '<div class="bar-info">Aucun médicament identifié automatiquement.</div>';
+    }
+    html += '<button class="btn outline" onclick="closeModal()">Fermer</button>';
+    document.getElementById('modalContent').innerHTML = html;
+    document.getElementById('modalBg').classList.add('on');
+  } catch(err){
+    st.textContent = 'Erreur';
+    toast('Erreur OCR', 'err');
+  }
+  e.target.value = '';
+}
+
+/* ============================================================
+   COMMANDE + PAIEMENT
+   ============================================================ */
+function openOrder(phId, stockId, medNom, prix, ordRequise, phTel){
+  haptic(10);
+  ordonnanceFile = null;
+  _orderData = { phId:phId, stockId:stockId, medNom:medNom, prix:prix, ordRequise:ordRequise, phTel:phTel, mode:'cash' };
+  var lastTel = localStorage.getItem('mp_patient_tel') || '';
+  var html = '<h2>' + ico('package') + 'Commander</h2>' +
+    '<div style="background:var(--c-04);margin-bottom:14px;padding:14px;border-radius:var(--r)"><b style="font-size:14.5px;display:block">' + escapeHtml(medNom) + '</b><div style="font-size:13px;color:var(--c-60);margin-top:5px;font-weight:500">Prix : <b style="color:var(--c);font-weight:800">' + prix + '</b> FCFA</div></div>' +
+    '<div class="field"><label>Votre numéro *</label><input id="oTel" type="tel" placeholder="+221 77 123 45 67" value="' + lastTel + '"></div>';
+  if (ordRequise) html += '<div class="bar-info">Ordonnance obligatoire pour ce médicament.</div>';
   html +=
-    '<div class="field"><label>📋 Photo de l\'ordonnance ' + (ordRequise ? '*' : '(optionnel)') + '</label>' +
-      '<div class="upload-box" id="upBox" onclick="document.getElementById(\'fileOrd\').click()">' +
-        '<div style="font-size:38px">📷</div>' +
-        '<div style="font-size:13px;color:var(--ink-3);margin-top:8px;font-weight:500">Appuyez pour prendre une photo</div>' +
-        '<input type="file" id="fileOrd" accept="image/*" capture="environment" style="display:none" onchange="onFilePicked(event)">' +
-      '</div><div id="preview"></div></div>' +
-    '<div class="field"><label>Note pour la pharmacie (optionnel)</label><textarea id="oNote" rows="2" placeholder="Ex : Préparer avant 18h"></textarea></div>' +
-    '<div style="font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:12px;margin-top:18px">💳 Mode de paiement</div>' +
-    '<label class="pay-option on" id="payCash" onclick="selectPay(\'cash\')"><input type="radio" name="pay" value="cash" checked><div class="pi">💵</div><div class="pt"><b>Espèces</b><small>À payer à la pharmacie</small></div></label>' +
-    '<label class="pay-option" id="payWave" onclick="selectPay(\'wave\')"><input type="radio" name="pay" value="wave"><div class="pi">📱</div><div class="pt"><b>Wave</b><small>Paiement mobile</small></div></label>' +
-    '<label class="pay-option" id="payOM" onclick="selectPay(\'orange\')"><input type="radio" name="pay" value="orange"><div class="pi">🟠</div><div class="pt"><b>Orange Money</b><small>Via OM</small></div></label>' +
-    '<label class="pay-option" id="payFree" onclick="selectPay(\'free\')"><input type="radio" name="pay" value="free"><div class="pi">🔵</div><div class="pt"><b>Free Money</b><small>Via Free</small></div></label>' +
-    '<button class="btn" id="btnSubmit" style="margin-top:16px" onclick="submitOrder()">✓ Confirmer la commande</button>' +
+    '<div class="field"><label>' + ico('camera', 'sm') + ' Ordonnance ' + (ordRequise ? '*' : '(optionnel)') + '</label>' +
+    '<div class="upload-box" id="upBox" onclick="document.getElementById(\'fileOrd\').click()">' +
+    ico('camera') + '<div class="txt">Prendre une photo</div>' +
+    '<input type="file" id="fileOrd" accept="image/*" capture="environment" style="display:none" onchange="onFilePicked(event)">' +
+    '</div><div id="preview"></div></div>' +
+    '<div class="field"><label>Note</label><textarea id="oNote" rows="2" placeholder="Ex : Préparer avant 18h"></textarea></div>' +
+    '<div style="font-size:11px;font-weight:800;color:var(--c-60);margin-bottom:10px;margin-top:14px;text-transform:uppercase;letter-spacing:.06em">Mode de paiement</div>' +
+    '<label class="pay-option on" id="payCash" onclick="selectPay(\'cash\')"><input type="radio" name="pay" value="cash" checked><div class="pi">' + ico('wallet') + '</div><div class="pt"><b>Espèces</b><small>À la pharmacie</small></div></label>' +
+    '<label class="pay-option" id="payWave" onclick="selectPay(\'wave\')"><input type="radio" name="pay" value="wave"><div class="pi">' + ico('phone') + '</div><div class="pt"><b>Wave</b><small>Paiement mobile</small></div></label>' +
+    '<label class="pay-option" id="payOM" onclick="selectPay(\'orange\')"><input type="radio" name="pay" value="orange"><div class="pi">' + ico('phone') + '</div><div class="pt"><b>Orange Money</b><small>Via OM</small></div></label>' +
+    '<label class="pay-option" id="payFree" onclick="selectPay(\'free\')"><input type="radio" name="pay" value="free"><div class="pi">' + ico('phone') + '</div><div class="pt"><b>Free Money</b><small>Via Free</small></div></label>' +
+    '<button class="btn" id="btnSubmit" style="margin-top:14px" onclick="submitOrder()">' + ico('check') + 'Confirmer</button>' +
     '<button class="close-modal" onclick="closeModal()">Annuler</button>';
   document.getElementById('modalContent').innerHTML = html;
   document.getElementById('modalBg').classList.add('on');
 }
 function selectPay(mode){
-  if (!_orderData) return;
-  _orderData.mode = mode;
+  haptic(10); _orderData.mode = mode;
   document.querySelectorAll('.pay-option').forEach(function(x){ x.classList.remove('on'); });
   var el = document.getElementById('pay' + (mode === 'cash' ? 'Cash' : mode === 'wave' ? 'Wave' : mode === 'orange' ? 'OM' : 'Free'));
   if (el) el.classList.add('on');
 }
-async function applyPromo(){
-  var code = document.getElementById('oPromo').value.trim().toUpperCase();
-  if (!code) return;
-  var r = await sb.from('codes_promo').select('*').eq('code', code).eq('actif', true).single();
-  if (r.error || !r.data){ toast('Code invalide'); return; }
-  _orderData.codePromo = code;
-  _orderData.remise = Math.round(_orderData.prix * r.data.remise_pct / 100);
-  document.getElementById('remiseInfo').style.display = 'block';
-  document.getElementById('remiseInfo').innerHTML = '🎟️ Code ' + code + ' : -' + _orderData.remise + ' FCFA (' + r.data.remise_pct + '%)';
-  toast('✅ Code promo appliqué');
-}
 function onFilePicked(e){
   var f = e.target.files[0];
   if (!f) return;
-  if (f.size > 5 * 1024 * 1024){ toast('Image trop lourde (max 5 Mo)'); return; }
+  if (f.size > 5 * 1024 * 1024){ toast('Max 5 Mo', 'err'); return; }
   ordonnanceFile = f;
-  var reader = new FileReader();
-  reader.onload = function(ev){
+  var rd = new FileReader();
+  rd.onload = function(ev){
     document.getElementById('upBox').classList.add('on');
     document.getElementById('preview').innerHTML = '<div class="preview"><img src="' + ev.target.result + '"></div>';
+    haptic(15);
   };
-  reader.readAsDataURL(f);
-}
-function closeModal(){
-  document.getElementById('modalBg').classList.remove('on');
-  document.getElementById('modalContent').innerHTML = '';
-  ordonnanceFile = null;
-  _orderData = null;
+  rd.readAsDataURL(f);
 }
 async function submitOrder(){
   if (!_orderData) return;
+  haptic(20);
   var tel = document.getElementById('oTel').value.trim();
-  if (!tel){ toast('Entrez votre numéro'); return; }
-  if (_orderData.ordRequise && !ordonnanceFile){ toast('Photo ordonnance obligatoire'); return; }
+  if (!tel){ toast('Numéro requis', 'err'); return; }
+  if (_orderData.ordRequise && !ordonnanceFile){ toast('Ordonnance obligatoire', 'err'); return; }
   var btn = document.getElementById('btnSubmit');
-  if (btn){ btn.disabled = true; btn.textContent = '⏳ Envoi...'; }
+  if (btn){ btn.disabled = true; btn.innerHTML = ico('clock') + 'Envoi...'; }
   var note = document.getElementById('oNote').value.trim();
   var code = 'PP-' + Math.random().toString(36).slice(2,7).toUpperCase();
   var url = null;
@@ -1452,62 +1819,53 @@ async function submitOrder(){
     var ext = ordonnanceFile.name.split('.').pop() || 'jpg';
     var path = Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
     var up = await sb.storage.from('ordonnances').upload(path, ordonnanceFile, { contentType: ordonnanceFile.type });
-    if (up.error){ toast('Erreur upload : ' + up.error.message); if(btn){btn.disabled=false;btn.textContent='✓ Confirmer la commande';} return; }
-    var pub = sb.storage.from('ordonnances').getPublicUrl(path);
-    url = pub.data.publicUrl;
+    if (up.error){ toast('Erreur upload', 'err'); if(btn){btn.disabled=false;btn.innerHTML=ico('check')+'Confirmer';} return; }
+    url = sb.storage.from('ordonnances').getPublicUrl(path).data.publicUrl;
   }
-  var totalFinal = _orderData.prix - _orderData.remise;
   var payStatus = _orderData.mode === 'cash' ? 'a_payer' : 'en_attente';
   var r = await sb.from('commandes').insert({
-    code: code, pharmacie_id: _orderData.phId, stock_id: _orderData.stockId,
+    code, pharmacie_id: _orderData.phId, stock_id: _orderData.stockId,
     medicament: _orderData.medNom, patient_tel: tel, mode: 'retrait',
-    total: totalFinal, statut: 'en_attente',
+    total: _orderData.prix, statut: 'en_attente',
     ordonnance_url: url, note: note || null,
-    payment_method: _orderData.mode,
-    payment_status: payStatus
+    payment_method: _orderData.mode, payment_status: payStatus
   }).select().single();
-  if (r.error){ toast('Erreur : ' + r.error.message); if(btn){btn.disabled=false;btn.textContent='✓ Confirmer la commande';} return; }
+  if (r.error){ toast('Erreur', 'err'); if(btn){btn.disabled=false;btn.innerHTML=ico('check')+'Confirmer';} return; }
   localStorage.setItem('mp_patient_tel', tel);
-  var cmdId = r.data.id, phId = _orderData.phId, phTel = _orderData.phTel, mode = _orderData.mode, total = totalFinal;
+  var cmdId = r.data.id, phId = _orderData.phId, phTel = _orderData.phTel, mode = _orderData.mode, total = _orderData.prix;
   closeModal();
-  if (mode === 'cash'){ toast('✅ Commande envoyée !'); setTimeout(function(){ openChat(cmdId, phId, code); }, 400); }
-  else { toast('✅ Commande enregistrée !'); setTimeout(function(){ openPayment({ id:cmdId, total:total, patient_tel:tel, payment_method:mode }, phTel); }, 400); }
+  if (mode === 'cash'){ toast('Commande envoyée', 'ok'); setTimeout(function(){ openChat(cmdId, phId, code); }, 400); }
+  else { toast('Commande enregistrée', 'ok'); setTimeout(function(){ openPayment({ id:cmdId, total, patient_tel:tel, payment_method:mode }, phTel); }, 400); }
 }
-
-/* ============================================================
-   PAIEMENT
-   ============================================================ */
 function openPayment(commande, phTel){
   var method = commande.payment_method;
-  var icons = { wave:'📱', orange:'🟠', free:'🔵' };
   var names = { wave:'Wave', orange:'Orange Money', free:'Free Money' };
   var numero = phTel || '+221 77 000 00 00';
-  var html =
-    '<h2>' + (icons[method] || '💳') + ' Payer par ' + (names[method] || method) + '</h2>' +
-    '<div class="bar-info"><b>Montant à envoyer : ' + commande.total + ' FCFA</b><br>Envoyez ce montant au numéro ci-dessous, puis collez l\'ID de transaction reçu par SMS.</div>' +
-    '<div style="font-size:12.5px;color:var(--ink-3);margin-bottom:8px;font-weight:600">📞 Numéro de la pharmacie</div>' +
-    '<div class="phone-display">' + numero + '<button class="copy-btn" onclick="copyText(\'' + numero + '\')">COPIER</button></div>' +
-    '<div class="field"><label>ID de transaction (reçu par SMS)</label><input id="payRef" placeholder="Ex : TXN123ABC"></div>' +
-    '<div class="field"><label>Votre numéro de téléphone</label><input id="payPhone" type="tel" value="' + (commande.patient_tel || '') + '"></div>' +
-    '<button class="btn" onclick="submitPayment(' + commande.id + ')">✓ J\'ai payé</button>' +
-    '<button class="close-modal" onclick="closeModal()">Payer plus tard</button>';
+  var html = '<h2>' + ico('phone') + 'Payer par ' + (names[method] || method) + '</h2>' +
+    '<div class="bar-info"><b>Montant : ' + commande.total + ' FCFA</b><br>Envoyez au numéro ci-dessous puis collez l\'ID de transaction.</div>' +
+    '<div style="background:var(--c-04);padding:14px;border-radius:var(--r);font-size:15px;font-weight:800;text-align:center;margin-bottom:12px;color:var(--c);letter-spacing:1px;user-select:all;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">' + numero + '<button style="background:var(--c);color:var(--bg);padding:6px 12px;border-radius:var(--r-sm);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px" onclick="copyText(\'' + numero + '\')">' + ico('copy', 'sm') + 'COPIER</button></div>' +
+    '<div class="field"><label>ID transaction</label><input id="payRef" placeholder="Ex : TXN123ABC"></div>' +
+    '<div class="field"><label>Votre numéro</label><input id="payPhone" type="tel" value="' + (commande.patient_tel || '') + '"></div>' +
+    '<button class="btn" onclick="submitPayment(' + commande.id + ')">' + ico('check') + 'J\'ai payé</button>' +
+    '<button class="close-modal" onclick="closeModal()">Plus tard</button>';
   document.getElementById('modalContent').innerHTML = html;
   document.getElementById('modalBg').classList.add('on');
 }
 function copyText(txt){
-  if (navigator.clipboard){ navigator.clipboard.writeText(txt).then(function(){ toast('📋 Copié'); }); }
-  else toast('Copiez : ' + txt);
+  haptic(15);
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ toast('Copié', 'ok'); });
+  else toast('Copiez : ' + txt, 'ok');
 }
 async function submitPayment(commandeId){
   var ref = document.getElementById('payRef').value.trim();
   var phone = document.getElementById('payPhone').value.trim();
-  if (!ref){ toast('Entrez l\'ID de transaction'); return; }
-  if (!phone){ toast('Entrez votre numéro'); return; }
-  var r = await sb.from('commandes').update({ payment_ref:ref, payment_phone:phone, payment_status:'en_attente' }).eq('id', commandeId);
-  if (r.error){ toast('Erreur : ' + r.error.message); return; }
-  toast('⏳ En attente de validation');
+  if (!ref){ toast('ID requis', 'err'); return; }
+  if (!phone){ toast('Numéro requis', 'err'); return; }
+  await sb.from('commandes').update({ payment_ref:ref, payment_phone:phone, payment_status:'en_attente' }).eq('id', commandeId);
+  toast('En attente de validation', 'ok');
+  haptic(20);
   closeModal();
-  setTimeout(function(){ go('mes-commandes'); }, 400);
+  setTimeout(function(){ go('commandes'); }, 400);
 }
 
 /* ============================================================
@@ -1515,46 +1873,75 @@ async function submitPayment(commandeId){
    ============================================================ */
 async function loadMesCommandes(){
   var el = document.getElementById('mesCommandes');
+  el.innerHTML = '<div class="card"><div class="skel skel-line lg"></div><div class="skel skel-line sm"></div></div>';
   var tel = localStorage.getItem('mp_patient_tel');
-  if (!tel){ el.innerHTML = '<div class="card empty"><div class="icon">📦</div><p>Aucune commande pour l\'instant.</p></div>'; return; }
-  el.innerHTML = '<div class="card"><div class="load"><div class="spinner"></div>Chargement...</div></div>';
+  if (!tel){ el.innerHTML = '<div class="card empty">' + ico('package', 'xl') + '<p>Aucune commande.</p></div>'; return; }
   var r = await sb.from('commandes').select('*,pharmacies(nom,tel)').eq('patient_tel', tel).order('created_at', {ascending:false});
-  if (r.error){ el.innerHTML = '<div class="card" style="color:var(--danger)">Erreur : ' + r.error.message + '</div>'; return; }
-  if (!r.data || !r.data.length){ el.innerHTML = '<div class="card empty"><div class="icon">📦</div><p>Aucune commande.</p></div>'; return; }
+  if (r.error || !r.data || !r.data.length){ el.innerHTML = '<div class="card empty">' + ico('package', 'xl') + '<p>Aucune commande.</p></div>'; return; }
+
+  var actives = r.data.filter(function(o){ return ['en_attente','acceptee','prete'].indexOf(o.statut) > -1; }).length;
+  var badge = document.getElementById('navCmdBadge');
+  if (badge){ badge.textContent = actives; badge.style.display = actives > 0 ? 'flex' : 'none'; }
+
   el.innerHTML = r.data.map(function(o){
     var phNom = o.pharmacies ? o.pharmacies.nom : 'Pharmacie';
     var phTel = o.pharmacies ? o.pharmacies.tel : '';
-    var ordLink = o.ordonnance_url ? '<a href="' + o.ordonnance_url + '" target="_blank" style="display:inline-block;margin-top:10px;padding:9px 14px;background:var(--primary-light);color:var(--primary-dark);border-radius:var(--radius-sm);font-size:12.5px;font-weight:700;text-decoration:none">📋 Voir l\'ordonnance</a>' : '';
-    var payLabels = { cash:'💵 Espèces', wave:'📱 Wave', orange:'🟠 Orange Money', free:'🔵 Free Money' };
-    var payLabel = payLabels[o.payment_method] || '💵 Espèces';
-    var payBadgeClass = o.payment_status || 'a_payer';
-    var payBadgeLabel = { a_payer:'À PAYER', en_attente:'⏳ EN ATTENTE', paye:'✅ PAYÉ' }[o.payment_status] || 'À PAYER';
-    var paySection = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--line-2)"><span style="font-size:13px;font-weight:600">' + payLabel + '</span><span class="pay-badge ' + payBadgeClass + '">' + payBadgeLabel + '</span></div>';
+    var payLabels = { cash:'Espèces', wave:'Wave', orange:'Orange Money', free:'Free Money' };
+    var pLabel = payLabels[o.payment_method] || 'Espèces';
+    var pbc = o.payment_status || 'a_payer';
+    var pbl = { a_payer:'À payer', en_attente:'En attente', paye:'Payé' }[o.payment_status] || 'À payer';
     var payBtn = '';
     if (o.payment_status === 'a_payer' && o.payment_method !== 'cash'){
-      payBtn = '<button class="btn blue" style="margin-bottom:10px" onclick=\'openPayment(' + JSON.stringify({id:o.id,total:o.total,patient_tel:o.patient_tel,payment_method:o.payment_method}).replace(/'/g,"&#39;") + ',"' + phTel + '")\'>💳 Payer ' + o.total + ' FCFA</button>';
+      payBtn = '<button class="btn sm" style="margin-bottom:8px" onclick=\'openPayment(' + JSON.stringify({id:o.id,total:o.total,patient_tel:o.patient_tel,payment_method:o.payment_method}).replace(/'/g,"&#39;") + ',"' + phTel + '")\'>' + ico('wallet','sm') + 'Payer ' + o.total + ' FCFA</button>';
     }
-    var waBtn = '<button class="btn wa" style="margin-bottom:10px" onclick="whatsappShare(\'' + o.code + '\',\'' + escapeHtml(o.medicament).replace(/'/g,"\\'") + '\',' + o.total + ',\'' + (phTel||'') + '\')">📤 Partager WhatsApp</button>';
     return '<div class="card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px">' +
-        '<b style="font-size:14.5px;font-weight:800;letter-spacing:-.01em">' + o.code + '</b>' +
-        '<span class="statut-badge ' + o.statut + '">' + o.statut.replace('_',' ') + '</span>' +
-      '</div>' +
-      '<div style="font-size:14.5px;margin-bottom:5px;font-weight:700">' + escapeHtml(o.medicament) + '</div>' +
-      '<div style="font-size:12.5px;color:var(--ink-3);margin-bottom:10px;font-weight:500">🏥 ' + escapeHtml(phNom) + '</div>' +
-      '<div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:12px;letter-spacing:-.01em">💰 ' + o.total + ' FCFA</div>' +
-      paySection +
-      (o.note ? '<div style="font-size:12.5px;color:var(--ink-3);padding:10px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:10px;font-weight:500">📝 ' + escapeHtml(o.note) + '</div>' : '') +
-      ordLink +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px"><b style="font-size:14px;font-weight:800">' + o.code + '</b><span class="statut-badge">' + o.statut.replace('_',' ') + '</span></div>' +
+      '<div style="font-size:14px;margin-bottom:5px;font-weight:700">' + escapeHtml(o.medicament) + '</div>' +
+      '<div style="font-size:12.5px;color:var(--c-60);margin-bottom:10px;font-weight:500;display:flex;align-items:center;gap:6px">' + ico('hospital', 'sm') + '<span>' + escapeHtml(phNom) + '</span></div>' +
+      '<div style="font-size:14px;color:var(--c);font-weight:800;margin-bottom:12px">' + o.total + ' FCFA</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:10px 12px;background:var(--c-04);border-radius:var(--r-sm);border:1px solid var(--c-12)"><span style="font-size:12.5px;font-weight:600">' + pLabel + '</span><span class="pay-badge">' + pbl + '</span></div>' +
       payBtn +
-      '<button class="btn" style="margin-top:10px" onclick="openChat(' + o.id + ',\'' + o.pharmacie_id + '\',\'' + o.code + '\')">💬 Discuter avec la pharmacie</button>' +
-      waBtn +
-    '</div>';
+      '<button class="btn outline" style="margin-top:8px" onclick="openChat(' + o.id + ',\'' + o.pharmacie_id + '\',\'' + o.code + '\')">' + ico('message','sm') + 'Discuter</button>' +
+      '</div>';
   }).join('');
 }
-function whatsappShare(code, med, total, phTel){
-  var txt = '💊 Ma Pharmacie%0ACommande : ' + code + '%0AMédicament : ' + med + '%0ATotal : ' + total + ' FCFA%0A' + (phTel ? 'Pharmacie : ' + phTel : '');
-  window.open('https://wa.me/?text=' + txt, '_blank');
+
+/* ============================================================
+   PROFIL
+   ============================================================ */
+async function loadProfil(){
+  document.getElementById('profilTel').value = localStorage.getItem('mp_patient_tel') || '';
+  var tel = localStorage.getItem('mp_patient_tel');
+  var statsEl = document.getElementById('userStats');
+  if (!tel){
+    statsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--c-60);padding:14px;font-size:12.5px;font-weight:500">Enregistrez votre numéro</div>';
+  } else {
+    var r = await sb.from('commandes').select('total').eq('patient_tel', tel);
+    var total = r.data ? r.data.reduce(function(s,o){ return s + o.total; }, 0) : 0;
+    statsEl.innerHTML = '<div class="stat"><div class="v">' + (r.data ? r.data.length : 0) + '</div><div class="l">Commandes</div></div>' +
+      '<div class="stat"><div class="v">' + total.toLocaleString('fr-FR') + '</div><div class="l">FCFA</div></div>';
+  }
+  var alertesEl = document.getElementById('alertesList');
+  if (tel){
+    var ra = await sb.from('alertes_stock').select('*').eq('patient_tel', tel);
+    if (ra.data && ra.data.length){
+      alertesEl.innerHTML = ra.data.map(function(a){
+        return '<div class="prod"><div class="info"><b>' + escapeHtml(a.medicament) + '</b><small>Créé ' + new Date(a.created_at).toLocaleDateString('fr-FR') + '</small></div>' + ico('bell') + '</div>';
+      }).join('');
+    } else {
+      alertesEl.innerHTML = '<div style="text-align:center;color:var(--c-60);padding:14px;font-size:12.5px;font-weight:500">Aucune alerte</div>';
+    }
+  } else {
+    alertesEl.innerHTML = '<div style="text-align:center;color:var(--c-60);padding:14px;font-size:12.5px;font-weight:500">Enregistrez votre numéro</div>';
+  }
+}
+function saveProfil(){
+  var tel = document.getElementById('profilTel').value.trim();
+  if (!tel){ toast('Entrez un numéro', 'err'); return; }
+  localStorage.setItem('mp_patient_tel', tel);
+  toast('Enregistré', 'ok');
+  haptic(20);
+  loadProfil();
 }
 
 /* ============================================================
@@ -1563,33 +1950,24 @@ function whatsappShare(code, med, total, phTel){
 function openChat(commandeId, phId, code){
   if (chatChannel && sb){ sb.removeChannel(chatChannel); chatChannel = null; }
   currentCommande = { id: commandeId, phId: phId, code: code };
-  chatBackScreen = session ? 'pharma' : (document.getElementById('s-mes-commandes').classList.contains('on') ? 'mes-commandes' : 'client');
+  chatBackScreen = currentScreen;
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
-  document.getElementById('hSub').style.display = 'none';
-  document.getElementById('hSearch').style.display = 'none';
   document.getElementById('s-chat').classList.add('on');
+  document.getElementById('hSub').style.display = 'none';
   document.getElementById('chatCode').textContent = code;
-  document.getElementById('chatBody').innerHTML = '<div class="load"><div class="spinner"></div>Chargement...</div>';
+  document.getElementById('chatBody').innerHTML = '<div class="skel" style="height:14px;margin-bottom:8px"></div><div class="skel skel-line sm"></div>';
   currentCommande.auteur = (session && session.id === phId) ? 'pharmacie' : 'patient';
-  loadChat();
-  subscribeChat();
-  if (phId){
-    sb.from('pharmacies').select('nom').eq('id', phId).single().then(function(r){
-      if (r.data) document.getElementById('chatPhName').textContent = r.data.nom;
-    });
-  }
+  loadChat(); subscribeChat();
+  if (phId) sb.from('pharmacies').select('nom').eq('id', phId).single().then(function(r){ if (r.data) document.getElementById('chatPhName').textContent = r.data.nom; });
 }
 async function loadChat(){
   var r = await sb.from('messages').select('*').eq('commande_id', currentCommande.id).order('created_at', { ascending: true });
-  if (r.error){ document.getElementById('chatBody').innerHTML = '<div class="empty" style="color:var(--danger)">Erreur : ' + r.error.message + '</div>'; return; }
+  if (r.error) return;
   renderChat(r.data || []);
 }
 function renderChat(msgs){
   var body = document.getElementById('chatBody');
-  if (!msgs.length){
-    body.innerHTML = '<div class="empty" style="padding:24px"><div class="icon" style="font-size:42px">💬</div><p style="font-size:13.5px">Aucun message.<br>Envoyez le premier !</p></div>';
-    return;
-  }
+  if (!msgs.length){ body.innerHTML = '<div class="empty" style="padding:20px">' + ico('message', 'xl') + '<p>Envoyez le premier message</p></div>'; return; }
   body.innerHTML = msgs.map(function(m){
     if (m.auteur === 'system') return '<div class="msg system">' + escapeHtml(m.texte || '') + '</div>';
     var classe = m.auteur === 'patient' ? 'patient' : 'pharmacie';
@@ -1604,36 +1982,34 @@ function subscribeChat(){
   if (chatChannel) sb.removeChannel(chatChannel);
   chatChannel = sb.channel('chat_' + currentCommande.id)
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages', filter:'commande_id=eq.' + currentCommande.id },
-      function(payload){ if (payload.new.auteur !== currentCommande.auteur) loadChat(); })
+      function(p){ if (p.new.auteur !== currentCommande.auteur){ loadChat(); haptic(20); } })
     .subscribe();
 }
 async function sendChatText(){
   var input = document.getElementById('chatText');
   var txt = input.value.trim();
   if (!txt) return;
-  input.value = '';
-  var r = await sb.from('messages').insert({ commande_id: currentCommande.id, auteur: currentCommande.auteur, texte: txt });
-  if (r.error){ toast('Erreur : ' + r.error.message); return; }
+  haptic(10); input.value = '';
+  await sb.from('messages').insert({ commande_id: currentCommande.id, auteur: currentCommande.auteur, texte: txt });
   loadChat();
 }
 async function sendChatImage(e){
   var f = e.target.files[0];
   if (!f) return;
-  if (f.size > 5 * 1024 * 1024){ toast('Image max 5 Mo'); return; }
-  toast('Envoi...');
+  if (f.size > 5 * 1024 * 1024){ toast('Max 5 Mo', 'err'); return; }
+  toast('Envoi...', 'ok'); haptic(15);
   var ext = f.name.split('.').pop() || 'jpg';
   var path = Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
   var up = await sb.storage.from('chat-images').upload(path, f, { contentType: f.type });
-  if (up.error){ toast('Erreur upload : ' + up.error.message); return; }
+  if (up.error){ toast('Erreur', 'err'); return; }
   var pub = sb.storage.from('chat-images').getPublicUrl(path);
-  var r = await sb.from('messages').insert({ commande_id: currentCommande.id, auteur: currentCommande.auteur, image_url: pub.data.publicUrl });
-  if (r.error){ toast('Erreur : ' + r.error.message); return; }
+  await sb.from('messages').insert({ commande_id: currentCommande.id, auteur: currentCommande.auteur, image_url: pub.data.publicUrl });
   e.target.value = '';
   loadChat();
 }
 
 /* ============================================================
-   AUTH PHARMACIE
+   AUTH + DASHBOARD PHARMACIE
    ============================================================ */
 function authTab(w){
   var tL = document.getElementById('tLogin'), tR = document.getElementById('tReg');
@@ -1649,57 +2025,51 @@ function initMapReg(){
     gpsReg = { lat: e.latlng.lat, lng: e.latlng.lng };
     if (mapRegMarker) mapReg.removeLayer(mapRegMarker);
     mapRegMarker = L.marker([gpsReg.lat, gpsReg.lng]).addTo(mapReg);
-    document.getElementById('gpsInfo').innerHTML = '📍 Position : ' + gpsReg.lat.toFixed(4) + ', ' + gpsReg.lng.toFixed(4);
+    document.getElementById('gpsInfo').innerHTML = gpsReg.lat.toFixed(4) + ', ' + gpsReg.lng.toFixed(4);
+    haptic(15);
   });
-  if (navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(function(p){ mapReg.setView([p.coords.latitude, p.coords.longitude], 14); }, function(){}, {timeout:5000});
-  }
+  if (navigator.geolocation) navigator.geolocation.getCurrentPosition(function(p){ mapReg.setView([p.coords.latitude, p.coords.longitude], 14); }, function(){}, {timeout:5000});
 }
 async function doLogin(){
-  if (!sb){ toast('Service indisponible'); return; }
   var tel = document.getElementById('lTel').value.trim();
   var pass = document.getElementById('lPass').value;
-  if (!tel || !pass){ toast('Remplissez les champs'); return; }
+  if (!tel || !pass){ toast('Champs requis', 'err'); return; }
   var email = tel.replace(/[^0-9]/g,'') + '@pharmacie.local';
-  var r = await sb.auth.signInWithPassword({ email: email, password: pass });
-  if (r.error){ toast('Identifiants incorrects'); return; }
+  var r = await sb.auth.signInWithPassword({ email, password: pass });
+  if (r.error){ toast('Identifiants incorrects', 'err'); haptic(30); return; }
   var p = await sb.from('pharmacies').select('*').eq('id', r.data.user.id).single();
-  if (p.error || !p.data){ toast('Profil introuvable'); return; }
-  session = p.data;
+  if (p.error || !p.data){ toast('Profil introuvable', 'err'); return; }
+  session = p.data; haptic(20);
   go('pharma');
-  toast('Bienvenue ' + session.nom);
+  toast('Bienvenue ' + session.nom, 'ok');
 }
 async function doRegister(){
-  if (!sb){ toast('Service indisponible'); return; }
   var nom = document.getElementById('rNom').value.trim();
   var tel = document.getElementById('rTel').value.trim();
   var pass = document.getElementById('rPass').value;
   var addr = document.getElementById('rAddr').value.trim();
-  if (!nom || !tel || !pass || !addr){ toast('Remplissez les champs'); return; }
-  if (pass.length < 6){ toast('Mot de passe : 6 car. min'); return; }
-  if (!gpsReg){ toast('Cliquez sur la carte pour votre position'); return; }
+  if (!nom || !tel || !pass || !addr){ toast('Champs requis', 'err'); return; }
+  if (pass.length < 6){ toast('6 caractères minimum', 'err'); return; }
+  if (!gpsReg){ toast('Cliquez sur la carte', 'err'); return; }
   var email = tel.replace(/[^0-9]/g,'') + '@pharmacie.local';
-  var a = await sb.auth.signUp({ email: email, password: pass });
-  if (a.error){ toast(a.error.message); return; }
-  if (!a.data.user){ toast('Compte non créé'); return; }
-  var ins = await sb.from('pharmacies').insert({ id: a.data.user.id, nom: nom, tel: tel, adresse: addr, lat: gpsReg.lat, lng: gpsReg.lng });
-  if (ins.error){ toast('Erreur : ' + ins.error.message); return; }
+  var a = await sb.auth.signUp({ email, password: pass });
+  if (a.error){ toast(a.error.message, 'err'); return; }
+  if (!a.data.user){ toast('Compte non créé', 'err'); return; }
+  var ins = await sb.from('pharmacies').insert({ id: a.data.user.id, nom, tel, adresse: addr, lat: gpsReg.lat, lng: gpsReg.lng });
+  if (ins.error){ toast('Erreur', 'err'); return; }
   var p = await sb.from('pharmacies').select('*').eq('id', a.data.user.id).single();
-  session = p.data;
+  session = p.data; haptic(30);
   go('pharma');
-  toast('Pharmacie créée 🎉');
+  toast('Pharmacie créée', 'ok');
 }
 async function logout(){
   if (!confirm('Se déconnecter ?')) return;
-  if (sb) await sb.auth.signOut();
+  await sb.auth.signOut();
   session = null;
+  updatePharmaBtn();
   go('client');
-  toast('Déconnecté');
+  toast('Déconnecté', 'ok');
 }
-
-/* ============================================================
-   DASHBOARD
-   ============================================================ */
 function dashTab(t){
   document.querySelectorAll('#s-dash .tab').forEach(function(x){ x.classList.remove('on'); });
   if (t === 'dash') document.getElementById('tDash').classList.add('on');
@@ -1716,99 +2086,61 @@ async function loadDashboard(tab){
   var el = document.getElementById('dashContent');
 
   if (tab === 'dash'){
+    el.innerHTML = '<div class="card"><div class="skel skel-line lg"></div><div class="skel skel-line sm"></div></div>';
     var r = await sb.from('stocks').select('*').eq('pharmacie_id', session.id).order('nom');
     var inv = r.data || [];
-    if (!inv.length){
-      el.innerHTML = '<div class="card empty"><div class="icon">💊</div><p>Aucun médicament.</p><button class="btn" style="margin-top:16px" onclick="dashTab(\'add\')">➕ Ajouter</button></div>';
-      return;
-    }
-    var totalQte = inv.reduce(function(s,x){ return s + x.qte; }, 0);
-    var valeur = inv.reduce(function(s,x){ return s + x.qte * x.prix; }, 0);
-    var ruptures = inv.filter(function(x){ return x.qte === 0; }).length;
-    var faibles = inv.filter(function(x){ return x.qte > 0 && x.qte <= (x.seuil || 10); }).length;
-    var html = '<div class="stats">' +
-      '<div class="stat"><div class="v">' + inv.length + '</div><div class="l">Références</div></div>' +
-      '<div class="stat"><div class="v">' + totalQte + '</div><div class="l">Boîtes</div></div>' +
-      '<div class="stat ' + (faibles?'warn':'') + '"><div class="v">' + faibles + '</div><div class="l">Stock faible</div></div>' +
-      '<div class="stat ' + (ruptures?'danger':'') + '"><div class="v">' + ruptures + '</div><div class="l">Ruptures</div></div></div>';
-    html += '<div class="card"><b style="color:var(--ink-3);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">💰 Valeur du stock</b><div class="price" style="margin-top:8px">' + valeur.toLocaleString('fr-FR') + ' FCFA</div></div>';
+    if (!inv.length){ el.innerHTML = '<div class="card empty">' + ico('pill', 'xl') + '<p>Aucun médicament.</p><button class="btn" style="margin-top:12px" onclick="dashTab(\'add\')">' + ico('plus','sm') + 'Ajouter</button></div>'; return; }
+    var tq = inv.reduce(function(s,x){ return s + x.qte; }, 0);
+    var val = inv.reduce(function(s,x){ return s + x.qte * x.prix; }, 0);
+    var ru = inv.filter(function(x){ return x.qte === 0; }).length;
+    var fa = inv.filter(function(x){ return x.qte > 0 && x.qte <= (x.seuil || 10); }).length;
+    var html = '<div class="stats"><div class="stat"><div class="v">' + inv.length + '</div><div class="l">Références</div></div><div class="stat"><div class="v">' + tq + '</div><div class="l">Boîtes</div></div><div class="stat"><div class="v">' + fa + '</div><div class="l">Stock faible</div></div><div class="stat"><div class="v">' + ru + '</div><div class="l">Ruptures</div></div></div>';
+    html += '<div class="card"><b style="color:var(--c-60);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:800">Valeur du stock</b><div class="price" style="margin-top:6px">' + val.toLocaleString('fr-FR') + ' FCFA</div></div>';
     html += inv.map(function(p){
-      var cls = p.qte === 0 ? 'out' : (p.qte <= (p.seuil || 10) ? 'low' : '');
-      return '<div class="prod ' + cls + '">' +
-        '<div class="info"><b>' + escapeHtml(p.nom) + '</b><small>' + p.prix + ' FCFA' + (p.ordonnance ? ' • 📋' : '') + '</small></div>' +
-        '<div class="qte ' + cls + '">' + p.qte + '<small>boîtes</small></div>' +
-        '<button class="icon-btn" onclick="editStock(' + p.id + ',' + p.prix + ',' + p.qte + ')">✏️</button></div>';
+      return '<div class="prod"><div class="info"><b>' + escapeHtml(p.nom) + '</b><small>' + p.prix + ' FCFA' + (p.ordonnance ? ' · Ordonnance' : '') + '</small></div><div class="qte">' + p.qte + '</div><button class="icon-btn" onclick="editStock(' + p.id + ',' + p.prix + ',' + p.qte + ')">' + ico('edit') + '</button></div>';
     }).join('');
     el.innerHTML = html;
-  }
-  else if (tab === 'add'){
-    el.innerHTML = '<div class="card"><h3>➕ Ajouter un médicament</h3>' +
-      '<div class="bar-info">💡 Le DCI (molécule) permet aux patients de vous trouver.</div>' +
-      '<div class="field"><label>Nom commercial *</label><input id="aNom" placeholder="Ex : Paracétamol 500 mg"></div>' +
-      '<div class="field"><label>DCI / Molécule</label><input id="aDci" placeholder="Ex : Paracétamol"></div>' +
+  } else if (tab === 'add'){
+    el.innerHTML = '<div class="card"><h3>' + ico('plus') + 'Ajouter un médicament</h3>' +
+      '<div class="field"><label>Nom *</label><input id="aNom" placeholder="Paracétamol 500 mg"></div>' +
+      '<div class="field"><label>DCI</label><input id="aDci" placeholder="Paracétamol"></div>' +
       '<div class="field"><label>Prix (FCFA) *</label><input id="aPrix" type="number" placeholder="1500"></div>' +
       '<div class="field"><label>Quantité *</label><input id="aQte" type="number" placeholder="50"></div>' +
       '<div class="field"><label>Seuil d\'alerte</label><input id="aSeuil" type="number" value="10"></div>' +
-      '<label style="display:flex;gap:10px;align-items:center;font-size:14px;margin-bottom:16px;padding:14px;background:var(--bg);border-radius:var(--radius);font-weight:600"><input type="checkbox" id="aOrd" style="width:18px;height:18px;accent-color:var(--primary)"> 📋 Ordonnance obligatoire</label>' +
-      '<button class="btn" onclick="saveStock()">✓ Ajouter</button></div>';
-  }
-  else if (tab === 'ord'){
+      '<label style="display:flex;gap:10px;align-items:center;font-size:13.5px;margin-bottom:14px;padding:14px;background:var(--c-04);border-radius:var(--r);font-weight:600;border:1px solid var(--c-12)"><input type="checkbox" id="aOrd" style="width:18px;height:18px;accent-color:var(--c)"> Ordonnance obligatoire</label>' +
+      '<button class="btn" onclick="saveStock()">' + ico('check') + 'Ajouter</button></div>';
+  } else if (tab === 'ord'){
+    el.innerHTML = '<div class="card"><div class="skel skel-line lg"></div></div>';
     var r = await sb.from('commandes').select('*').eq('pharmacie_id', session.id).order('created_at', {ascending:false});
     var ord = r.data || [];
-    var nouvelles = ord.filter(function(o){ return o.statut === 'en_attente'; }).length;
-    var badge = document.getElementById('badgeOrd');
-    if (badge){ badge.textContent = nouvelles; badge.style.display = nouvelles > 0 ? 'inline-block' : 'none'; }
-    if (!ord.length){ el.innerHTML = '<div class="card empty"><div class="icon">🛒</div><p>Aucune commande.</p></div>'; return; }
+    var nv = ord.filter(function(o){ return o.statut === 'en_attente'; }).length;
+    var bd = document.getElementById('badgeOrd');
+    if (bd){ bd.textContent = nv; bd.style.display = nv > 0 ? 'inline-block' : 'none'; }
+    if (!ord.length){ el.innerHTML = '<div class="card empty">' + ico('package','xl') + '<p>Aucune commande.</p></div>'; return; }
     el.innerHTML = ord.map(function(o){
       var st = o.statut || 'en_attente';
-      var payLabels = { cash:'💵 Espèces', wave:'📱 Wave', orange:'🟠 Orange Money', free:'🔵 Free Money' };
-      var payLabel = payLabels[o.payment_method] || '💵 Espèces';
-      var payBadgeClass = o.payment_status || 'a_payer';
-      var payBadgeLabel = { a_payer:'À PAYER', en_attente:'⏳ EN ATTENTE', paye:'✅ PAYÉ' }[o.payment_status] || 'À PAYER';
-      return '<div class="card" style="' + (st === 'en_attente' ? 'border-left:4px solid var(--danger)' : '') + '">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px">' +
-          '<b style="font-weight:800;font-size:14.5px">' + o.code + '</b>' +
-          '<span class="statut-badge ' + st + '">' + st.replace('_',' ') + '</span></div>' +
-        '<div style="font-size:14.5px;margin-bottom:6px;font-weight:700">' + escapeHtml(o.medicament) + '</div>' +
-        '<div style="font-size:12.5px;color:var(--ink-3);margin-bottom:8px;font-weight:500">📞 ' + escapeHtml(o.patient_tel) + '</div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:12.5px;border:1px solid var(--line-2)">' +
-          '<span style="font-weight:600">' + payLabel + (o.payment_ref ? ' • Réf: <b>' + escapeHtml(o.payment_ref) + '</b>' : '') + '</span>' +
-          '<span class="pay-badge ' + payBadgeClass + '">' + payBadgeLabel + '</span></div>' +
-        (o.note ? '<div style="font-size:12.5px;color:var(--ink-3);padding:10px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:10px;font-weight:500">📝 ' + escapeHtml(o.note) + '</div>' : '') +
-        (o.ordonnance_url ? '<div style="margin-bottom:12px"><a href="' + o.ordonnance_url + '" target="_blank" style="display:inline-block;padding:9px 14px;background:var(--primary-light);color:var(--primary-dark);border-radius:var(--radius-sm);text-decoration:none;font-size:12.5px;font-weight:700">📋 Voir l\'ordonnance</a></div>' : '') +
-        '<div style="display:flex;justify-content:space-between;font-weight:800;color:var(--primary);margin-bottom:12px;font-size:15px"><span>Total</span><span>' + o.total + ' FCFA</span></div>' +
-        (st === 'en_attente' ? '<div style="display:flex;gap:10px;margin-bottom:10px"><button class="btn" style="flex:1;margin:0" onclick="setStatut(' + o.id + ',\'acceptee\')">✓ Accepter</button>' +
-          '<button class="btn red" style="flex:1;margin:0" onclick="setStatut(' + o.id + ',\'refusee\')">✕ Refuser</button></div>' : '') +
-        (st === 'acceptee' ? '<button class="btn" style="margin-bottom:10px" onclick="setStatut(' + o.id + ',\'prete\')">📦 Marquer prête</button>' : '') +
-        (o.payment_status === 'en_attente' ? '<button class="btn orange" style="margin-bottom:10px" onclick="confirmPayment(' + o.id + ')">💰 Confirmer paiement reçu</button>' : '') +
-        '<button class="btn sec" onclick="openChat(' + o.id + ',\'' + session.id + '\',\'' + o.code + '\')">💬 Discuter avec le patient</button></div>';
+      return '<div class="card" style="' + (st === 'en_attente' ? 'border-color:var(--c);border-left-width:4px' : '') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px"><b style="font-weight:800;font-size:14px">' + o.code + '</b><span class="statut-badge">' + st.replace('_',' ') + '</span></div>' +
+        '<div style="font-size:14px;margin-bottom:5px;font-weight:700">' + escapeHtml(o.medicament) + '</div>' +
+        '<div style="font-size:12.5px;color:var(--c-60);margin-bottom:8px;font-weight:500;display:flex;align-items:center;gap:6px">' + ico('phone', 'sm') + '<span>' + escapeHtml(o.patient_tel) + '</span></div>' +
+        (o.ordonnance_url ? '<div style="margin-bottom:10px"><a href="' + o.ordonnance_url + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:var(--c-08);color:var(--c);border-radius:var(--r-sm);text-decoration:none;font-size:12px;font-weight:700">' + ico('image','sm') + 'Voir l\'ordonnance</a></div>' : '') +
+        '<div style="display:flex;justify-content:space-between;font-weight:800;color:var(--c);margin-bottom:12px;font-size:14.5px"><span>Total</span><span>' + o.total + ' FCFA</span></div>' +
+        (st === 'en_attente' ? '<div style="display:flex;gap:8px"><button class="btn sm" style="flex:1;margin:0" onclick="setStatut(' + o.id + ',\'acceptee\')">' + ico('check','sm') + 'Accepter</button><button class="btn outline sm" style="flex:1;margin:0" onclick="setStatut(' + o.id + ',\'refusee\')">' + ico('close','sm') + 'Refuser</button></div>' : '') +
+        (o.payment_status === 'en_attente' ? '<button class="btn outline sm" style="margin-top:8px" onclick="confirmPayment(' + o.id + ')">' + ico('wallet','sm') + 'Confirmer paiement</button>' : '') +
+        '<button class="btn outline sm" style="margin-top:8px" onclick="openChat(' + o.id + ',\'' + session.id + '\',\'' + o.code + '\')">' + ico('message','sm') + 'Discuter</button>' +
+        '</div>';
     }).join('');
-  }
-  else if (tab === 'pay'){
+  } else if (tab === 'pay'){
+    el.innerHTML = '<div class="card"><div class="skel skel-line lg"></div></div>';
     var r = await sb.from('commandes').select('*').eq('pharmacie_id', session.id).order('created_at', {ascending:false});
     var ord = (r.data || []).filter(function(o){ return o.payment_method !== 'cash'; });
     var payees = ord.filter(function(o){ return o.payment_status === 'paye'; });
-    var attente = ord.filter(function(o){ return o.payment_status === 'en_attente'; });
-    var totalRecu = payees.reduce(function(s,o){ return s + o.total; }, 0);
-    var totalAttente = attente.reduce(function(s,o){ return s + o.total; }, 0);
-    var html = '<div class="stats">' +
-      '<div class="stat"><div class="v">' + payees.length + '</div><div class="l">Paiements reçus</div></div>' +
-      '<div class="stat ' + (attente.length?'warn':'') + '"><div class="v">' + attente.length + '</div><div class="l">En attente</div></div></div>';
-    html += '<div class="card"><b style="color:var(--ink-3);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">💰 Total reçu</b><div class="price" style="margin-top:8px">' + totalRecu.toLocaleString('fr-FR') + ' FCFA</div></div>';
-    if (attente.length) html += '<div class="card" style="border-left:4px solid var(--warning)"><b style="color:var(--warning);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">⏳ En attente</b><div class="price" style="margin-top:8px;color:var(--warning)">' + totalAttente.toLocaleString('fr-FR') + ' FCFA</div></div>';
-    if (!ord.length) html += '<div class="card empty"><div class="icon">💰</div><p>Aucun paiement mobile.</p></div>';
-    else html += ord.slice(0, 20).map(function(o){
-      var payLabels = { wave:'📱 Wave', orange:'🟠 Orange Money', free:'🔵 Free Money' };
-      var payLabel = payLabels[o.payment_method] || o.payment_method;
-      var payBadgeClass = o.payment_status || 'a_payer';
-      var payBadgeLabel = { a_payer:'À PAYER', en_attente:'⏳ EN ATTENTE', paye:'✅ PAYÉ' }[o.payment_status] || 'À PAYER';
-      return '<div class="card" style="padding:14px">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="font-size:13.5px;font-weight:800">' + o.code + '</b><span class="pay-badge ' + payBadgeClass + '">' + payBadgeLabel + '</span></div>' +
-        '<div style="font-size:12.5px;color:var(--ink-3);margin-bottom:5px;font-weight:500">' + payLabel + ' • ' + escapeHtml(o.medicament) + '</div>' +
-        '<div style="font-size:12.5px;color:var(--ink-3);margin-bottom:10px;font-weight:500">📞 ' + escapeHtml(o.payment_phone || o.patient_tel) + (o.payment_ref ? ' • Réf: <b>' + escapeHtml(o.payment_ref) + '</b>' : '') + '</div>' +
-        '<div style="display:flex;justify-content:space-between;font-weight:800;color:var(--primary);align-items:center"><span>' + o.total + ' FCFA</span>' +
-          (o.payment_status === 'en_attente' ? '<button class="btn orange sm" style="width:auto;padding:8px 14px;margin:0" onclick="confirmPayment(' + o.id + ')">✓ Confirmer</button>' : '') + '</div></div>';
-    }).join('');
+    var att = ord.filter(function(o){ return o.payment_status === 'en_attente'; });
+    var totR = payees.reduce(function(s,o){ return s + o.total; }, 0);
+    var totA = att.reduce(function(s,o){ return s + o.total; }, 0);
+    var html = '<div class="stats"><div class="stat"><div class="v">' + payees.length + '</div><div class="l">Reçus</div></div><div class="stat"><div class="v">' + att.length + '</div><div class="l">En attente</div></div></div>';
+    html += '<div class="card"><b style="color:var(--c-60);font-size:11px;text-transform:uppercase;font-weight:800">Total reçu</b><div class="price" style="margin-top:6px">' + totR.toLocaleString('fr-FR') + ' FCFA</div></div>';
+    if (att.length) html += '<div class="card"><b style="color:var(--c-60);font-size:11px;text-transform:uppercase;font-weight:800">En attente</b><div class="price" style="margin-top:6px">' + totA.toLocaleString('fr-FR') + ' FCFA</div></div>';
     el.innerHTML = html;
   }
 }
@@ -1819,23 +2151,21 @@ async function saveStock(){
   var qte = parseInt(document.getElementById('aQte').value);
   var seuil = parseInt(document.getElementById('aSeuil').value) || 10;
   var ord = document.getElementById('aOrd').checked;
-  if (!nom || isNaN(prix) || isNaN(qte)){ toast('Remplissez nom, prix et quantité'); return; }
-  var r = await sb.from('stocks').insert({ pharmacie_id: session.id, nom: nom, dci: dci || null, prix: prix, qte: qte, seuil: seuil, ordonnance: ord, visible: true });
-  if (r.error){ toast('Erreur : ' + r.error.message); return; }
-  toast('✅ Ajouté');
+  if (!nom || isNaN(prix) || isNaN(qte)){ toast('Champs requis', 'err'); return; }
+  var r = await sb.from('stocks').insert({ pharmacie_id: session.id, nom, dci: dci || null, prix, qte, seuil, ordonnance: ord, visible: true });
+  if (r.error){ toast('Erreur', 'err'); return; }
+  toast('Ajouté', 'ok'); haptic(20);
   dashTab('dash');
 }
 async function editStock(id, prix, qte){
-  var np = prompt('Nouveau prix :', prix);
-  if (np === null) return;
-  var nq = prompt('Nouvelle quantité :', qte);
-  if (nq === null) return;
-  var r = await sb.from('stocks').update({ prix: parseInt(np), qte: parseInt(nq), updated_at: new Date().toISOString() }).eq('id', id);
-  if (r.error){ toast('Erreur'); return; }
-  toast('✅ Modifié');
+  var np = prompt('Prix :', prix); if (np === null) return;
+  var nq = prompt('Quantité :', qte); if (nq === null) return;
+  await sb.from('stocks').update({ prix: parseInt(np), qte: parseInt(nq), updated_at: new Date().toISOString() }).eq('id', id);
+  toast('Modifié', 'ok'); haptic(15);
   loadDashboard('dash');
 }
 async function setStatut(id, statut){
+  haptic(15);
   if (statut === 'acceptee'){
     var cmd = await sb.from('commandes').select('stock_id').eq('id', id).single();
     if (cmd.data && cmd.data.stock_id){
@@ -1843,39 +2173,51 @@ async function setStatut(id, statut){
       if (s.data && s.data.qte > 0) await sb.from('stocks').update({ qte: s.data.qte - 1, updated_at: new Date().toISOString() }).eq('id', cmd.data.stock_id);
     }
   }
-  var r = await sb.from('commandes').update({ statut: statut }).eq('id', id);
-  if (r.error){ toast('Erreur'); return; }
-  toast('✅ ' + statut);
+  await sb.from('commandes').update({ statut }).eq('id', id);
+  toast('Statut ' + statut, 'ok');
   loadDashboard('ord');
 }
 async function confirmPayment(id){
-  if (!confirm('Confirmer avoir reçu ce paiement ?')) return;
-  var r = await sb.from('commandes').update({ payment_status: 'paye' }).eq('id', id);
-  if (r.error){ toast('Erreur'); return; }
-  await sb.from('messages').insert({ commande_id: id, auteur: 'system', texte: '✅ Paiement confirmé par la pharmacie' });
-  toast('✅ Paiement confirmé');
-  var payTab = document.getElementById('tPay');
-  loadDashboard(payTab && payTab.classList.contains('on') ? 'pay' : 'ord');
+  if (!confirm('Confirmer ?')) return;
+  haptic(20);
+  await sb.from('commandes').update({ payment_status: 'paye' }).eq('id', id);
+  await sb.from('messages').insert({ commande_id: id, auteur: 'system', texte: 'Paiement confirmé' });
+  toast('Paiement confirmé', 'ok');
+  loadDashboard('pay');
 }
 
 /* ============================================================
    DÉMARRAGE
    ============================================================ */
+var TIPS = [
+  'Buvez au moins 1,5 L d\'eau par jour.',
+  'Lavez-vous les mains 30 secondes.',
+  'Dormez 7-8 h par nuit.',
+  'Mangez 5 fruits et légumes par jour.',
+  '30 min d\'activité physique par jour.',
+  'Évitez l\'automédication.',
+  'Vérifiez la date de péremption.',
+  'Conservez vos médicaments au frais.'
+];
+
 window.addEventListener('DOMContentLoaded', async function(){
+  var dayIdx = new Date().getDate() % TIPS.length;
+  document.getElementById('tipText').textContent = TIPS[dayIdx];
+  document.getElementById('tipCard').style.display = 'block';
+
   if (!sb) return;
   var s = await sb.auth.getSession();
   if (s.data && s.data.session){
     var p = await sb.from('pharmacies').select('*').eq('id', s.data.session.user.id).single();
     if (p.data) session = p.data;
   }
-  if (session){
-    var c = await sb.from('commandes').select('id', { count:'exact', head:true }).eq('pharmacie_id', session.id).eq('statut', 'en_attente');
-    if (c.count && c.count > 0){
-      var badge = document.getElementById('badgeOrd');
-      if (badge){ badge.textContent = c.count; badge.style.display = 'inline-block'; }
-    }
+  updatePharmaBtn();
+  if (navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(p){
+      userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
+    }, function(){}, { timeout:5000 });
   }
 });
 </script>
 </body>
-    </html>
+  </html>
