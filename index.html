@@ -32,8 +32,6 @@ button:active{transform:scale(.97)}
 .ico{width:22px;height:22px;display:block;flex-shrink:0;stroke:currentColor;fill:none;
   stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ico.sm{width:18px;height:18px}.ico.lg{width:28px;height:28px}.ico.xl{width:42px;height:42px;stroke-width:1.5}
-.ico.spin{animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 
 header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
   border-radius:0 0 24px 24px;position:sticky;top:0;z-index:100;
@@ -338,7 +336,6 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
 .template-tip code{background:var(--bg);padding:1px 6px;border-radius:4px;
   font-size:11.5px;font-weight:700;border:1px solid var(--c-16)}
 
-/* PENDING STATE */
 .pending-state{text-align:center;padding:32px 20px}
 .pending-state .icon-circle{width:80px;height:80px;border-radius:50%;display:flex;
   align-items:center;justify-content:center;margin:0 auto 18px;font-size:38px}
@@ -349,6 +346,28 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
 .pending-state .recap{background:var(--c-04);padding:14px;border-radius:var(--r);
   margin:16px 0;font-size:12.5px;color:var(--c-60);text-align:left;line-height:1.8;font-weight:500}
 .pending-state .recap b{color:var(--c);font-weight:800}
+
+/* SUGGESTIONS PHARMACIES */
+.pharma-suggestions{
+  background:var(--bg);border-radius:var(--r);margin-top:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:280px;overflow-y:auto;
+  display:none;border:1.5px solid var(--c-12);animation:cardIn .2s var(--ease);
+}
+.pharma-suggestions.on{display:block}
+.pharma-suggestion{
+  padding:12px 14px;cursor:pointer;font-size:13.5px;
+  border-bottom:1px solid var(--c-08);display:flex;gap:10px;align-items:flex-start;
+  transition:.15s var(--ease);
+}
+.pharma-suggestion:last-child{border-bottom:none}
+.pharma-suggestion:active{background:var(--c-04)}
+.pharma-suggestion .ico{width:18px;height:18px;color:var(--c);margin-top:2px;flex-shrink:0}
+.pharma-suggestion .sugg-info{flex:1;min-width:0}
+.pharma-suggestion b{display:block;font-weight:700;margin-bottom:2px;color:var(--c);font-size:13.5px}
+.pharma-suggestion small{display:block;font-size:11.5px;color:var(--c-60);font-weight:500;line-height:1.4}
+.pharma-suggestion.loading{justify-content:center;align-items:center;color:var(--c-60);font-size:12.5px;padding:16px;flex-direction:column;gap:8px}
+.pharma-suggestion.loading .spinner{width:20px;height:20px;border:2px solid var(--c-12);border-top-color:var(--c);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 @media (max-width:380px){
   .wrap{padding:14px}.card{padding:14px}
@@ -394,6 +413,7 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
   <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M16 8l-2 6-6 2 2-6z" fill="currentColor" stroke="none" opacity=".9"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></symbol>
 </svg>
 
 <header>
@@ -500,23 +520,25 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
 
         <div class="field">
           <label>Nom de la pharmacie *</label>
-          <input id="rNom" placeholder="Pharmacie du Plateau" autocomplete="organization">
+          <input id="rNom" placeholder="Ex : Pharmacie du Plateau..." autocomplete="off" oninput="searchPharmacy(this.value)">
+          <div id="pharmaSuggestions" class="pharma-suggestions"></div>
+          <div class="help" id="pharmaHelp">📍 La position sera détectée automatiquement</div>
         </div>
 
         <div class="field">
           <label>Numéro de licence * (Ordre des Pharmaciens)</label>
-          <input id="rLicence" placeholder="Ex : SEN-PH-2024-0123" autocomplete="off">
+          <input id="rLicence" placeholder="Ex : SEN-PH-2024-0123">
           <div class="help">Format : préfixe pays + PH + année + numéro</div>
         </div>
 
         <div class="field">
           <label>Nom du pharmacien titulaire *</label>
-          <input id="rPharmacien" placeholder="Dr. Amadou Diallo" autocomplete="name">
+          <input id="rPharmacien" placeholder="Dr. Amadou Diallo">
         </div>
 
         <div class="field">
           <label>Téléphone *</label>
-          <input id="rTel" type="tel" placeholder="+221 77 123 45 67" autocomplete="tel">
+          <input id="rTel" type="tel" placeholder="+221 77 123 45 67">
         </div>
 
         <div class="field">
@@ -525,14 +547,14 @@ header{background:var(--c);color:var(--bg);padding:16px 20px 20px;
         </div>
 
         <div class="field">
-          <label>Adresse complète *</label>
-          <input id="rAddr" placeholder="12 Av. L.S. Senghor, Plateau, Dakar">
+          <label>Adresse complète (auto-remplie)</label>
+          <input id="rAddr" placeholder="Sélectionnez d'abord la pharmacie">
         </div>
 
-        <div class="field">
-          <label>Position GPS * (cliquez sur la carte)</label>
-          <div id="mapReg" style="height:200px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--c-16)"></div>
-          <small id="gpsInfo" class="help">📍 Aucune position sélectionnée</small>
+        <div class="field" id="mapPreviewField" style="display:none">
+          <label>Position GPS détectée ✓</label>
+          <div id="mapPreview" style="height:160px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--c-16)"></div>
+          <small id="gpsInfo" class="help">📍 Position automatiquement détectée</small>
         </div>
 
         <label class="checkbox">
@@ -670,7 +692,7 @@ try{sb=window.supabase.createClient(
 );}catch(e){console.error(e);}
 
 var userPos=null,session=null,gpsReg=null;
-var mapReg=null,mapRegMarker=null;
+var mapReg=null,mapRegMarker=null,geocodingTimeout=null;
 var ordonnanceFile=null,currentCommande=null,chatChannel=null;
 var chatBackScreen='client',_orderData=null;
 var currentScreen='client';
@@ -764,7 +786,6 @@ function onPositionError(err){
 }
 async function loadLivePharmacies(){
   if(!sb||!userPos)return;
-  // 🔒 Uniquement les pharmacies VALIDÉES
   var r=await sb.from('pharmacies').select('*').eq('statut','valide');
   if(r.error||!r.data||!r.data.length)return;
   var phs=r.data.map(function(p){return Object.assign({},p,{distance:computeDistance(userPos,{lat:p.lat,lng:p.lng})})}).sort(function(a,b){return a.distance-b.distance});
@@ -779,11 +800,102 @@ async function loadLivePharmacies(){
 window.addEventListener('beforeunload',function(){if(watchId!==null)navigator.geolocation.clearWatch(watchId)});
 
 /* ============================================================
+   RECHERCHE AUTO PHARMACIE (Nominatim)
+   ============================================================ */
+async function searchPharmacy(q){
+  var box=document.getElementById('pharmaSuggestions');
+  if(!box)return;
+  if(q.length<3){box.classList.remove('on');box.innerHTML='';return}
+
+  clearTimeout(geocodingTimeout);
+  geocodingTimeout=setTimeout(async function(){
+    box.classList.add('on');
+    box.innerHTML='<div class="pharma-suggestion loading"><div class="spinner"></div><span>Recherche...</span></div>';
+
+    try{
+      var url='https://nominatim.openstreetmap.org/search?'+
+        'q='+encodeURIComponent(q)+
+        '&format=json&limit=6&addressdetails=1&extratags=1';
+      var r=await fetch(url,{headers:{'Accept':'application/json'}});
+      var data=await r.json();
+
+      if(!data||!data.length){
+        box.innerHTML='<div class="pharma-suggestion loading">'+
+          '<span>😕 Aucune pharmacie trouvée</span>'+
+          '<small style="font-size:11px;text-align:center">Essayez un autre nom ou l\'adresse</small>'+
+        '</div>';
+        return;
+      }
+
+      window._pharmaResults=data;
+
+      box.innerHTML=data.map(function(item,i){
+        var parts=item.display_name.split(',');
+        var nom=parts[0].trim();
+        var adresseComplete=parts.slice(1).join(',').trim();
+        return '<div class="pharma-suggestion" onclick="selectPharmacySuggestion('+i+')">'+
+          '<svg class="ico"><use href="#i-hospital"/></svg>'+
+          '<div class="sugg-info">'+
+            '<b>'+escapeHtml(nom)+'</b>'+
+            '<small>'+escapeHtml(adresseComplete)+'</small>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+    }catch(err){
+      console.error(err);
+      box.innerHTML='<div class="pharma-suggestion loading"><span style="color:#d64545">Erreur de connexion</span></div>';
+    }
+  },400);
+}
+
+function selectPharmacySuggestion(index){
+  var data=window._pharmaResults;
+  if(!data||!data[index])return;
+
+  var item=data[index];
+  var parts=item.display_name.split(',');
+  var nom=parts[0].trim();
+  var adresseComplete=item.display_name;
+
+  document.getElementById('rNom').value=nom;
+  document.getElementById('rAddr').value=adresseComplete;
+  gpsReg={lat:parseFloat(item.lat),lng:parseFloat(item.lon)};
+
+  document.getElementById('pharmaHelp').innerHTML='✅ Position détectée automatiquement';
+
+  var mapField=document.getElementById('mapPreviewField');
+  mapField.style.display='block';
+  document.getElementById('gpsInfo').innerHTML='📍 '+gpsReg.lat.toFixed(4)+', '+gpsReg.lng.toFixed(4);
+
+  setTimeout(function(){
+    if(mapReg){try{mapReg.remove()}catch(e){}}
+    mapReg=L.map('mapPreview',{
+      zoomControl:false,attributionControl:false,dragging:false,
+      scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false
+    }).setView([gpsReg.lat,gpsReg.lng],16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(mapReg);
+    mapRegMarker=L.marker([gpsReg.lat,gpsReg.lng]).addTo(mapReg);
+  },100);
+
+  document.getElementById('pharmaSuggestions').classList.remove('on');
+  haptic(20);
+  toast('Pharmacie localisée ✓','ok');
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#fReg'))return;
+  if(!e.target.closest('#rNom')&&!e.target.closest('#pharmaSuggestions')){
+    var box=document.getElementById('pharmaSuggestions');
+    if(box)box.classList.remove('on');
+  }
+});
+
+/* ============================================================
    COMMAND PALETTE
    ============================================================ */
 var CMDS=[
   {group:'Recherche',id:'search',icon:'search',title:'Rechercher un médicament',desc:'Nom ou molécule',kbd:'1',run:function(){closeCmdk();go('client');setTimeout(function(){var s=document.getElementById('search');if(s)s.focus()},200)},keywords:'chercher trouver medicament'},
-  {group:'Recherche',id:'voice',icon:'camera',title:'Recherche vocale',desc:'Dites ce que vous cherchez',kbd:'2',run:function(){closeCmdk();go('client');setTimeout(startVoice,300)},keywords:'voix vocal parler'},
+  {group:'Recherche',id:'voice',icon:'mic',title:'Recherche vocale',desc:'Dites ce que vous cherchez',kbd:'2',run:function(){closeCmdk();go('client');setTimeout(startVoice,300)},keywords:'voix vocal parler'},
   {group:'Outils',id:'scanner',icon:'camera',title:'Scanner une ordonnance',desc:'Photo OCR',kbd:'3',run:function(){closeCmdk();openScanner()},keywords:'scanner photo ordonnance'},
   {group:'Outils',id:'map',icon:'location',title:'Recentrer ma position',desc:'Suivi GPS en direct',kbd:'4',run:function(){closeCmdk();go('client');setTimeout(startWatchPosition,300)},keywords:'position carte gps'},
   {group:'Pharmacie',id:'pharma',icon:'hospital',title:'Espace Pharmacie',desc:'Gestion complète',kbd:'P',run:function(){closeCmdk();go('pharma')},keywords:'pharmacie pro stock excel'},
@@ -874,10 +986,7 @@ async function search(){
   if(!q||!userPos||!sb)return;
   var el=document.getElementById('result');
   el.innerHTML='<div class="card"><div class="skel skel-line lg"></div><div class="skel skel-line sm"></div></div>';
-  
-  // 🔒 Récupère les stocks avec le statut de la pharmacie
   var r=await sb.from('stocks').select('id,nom,dci,prix,qte,ordonnance,pharmacie_id,pharmacies!inner(id,nom,adresse,tel,lat,lng,garde,delivery,ouv,ferm,statut)').gt('qte',0).eq('visible',true).eq('pharmacies.statut','valide').limit(500);
-  
   if(r.error||!r.data||!r.data.length){el.innerHTML='<div class="card empty">'+ico('search','xl')+'<p>Aucun médicament.</p></div>';return}
   var scored=r.data.filter(function(x){return x.pharmacies&&x.pharmacies.statut==='valide'}).map(function(m){return{item:m,score:Math.max(fuzzyScore(q,m.nom),fuzzyScore(q,m.dci||''))}}).filter(function(x){return x.score>100}).sort(function(a,b){return b.score-a.score});
   if(!scored.length){el.innerHTML='<div class="card empty">'+ico('search','xl')+'<p>Aucun résultat.</p></div>';haptic(30);return}
@@ -978,82 +1087,43 @@ function authTab(w){
   var tL=document.getElementById('tLogin'),tR=document.getElementById('tReg');
   var fL=document.getElementById('fLogin'),fR=document.getElementById('fReg');
   if(w==='login'){tL.classList.add('on');tR.classList.remove('on');fL.style.display='block';fR.style.display='none'}
-  else{tR.classList.add('on');tL.classList.remove('on');fL.style.display='none';fR.style.display='block';setTimeout(initMapReg,200)}
+  else{tR.classList.add('on');tL.classList.remove('on');fL.style.display='none';fR.style.display='block'}
 }
-function initMapReg(){
-  if(mapReg||typeof L==='undefined')return;
-  mapReg=L.map('mapReg').setView([14.6928,-17.4467],12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapReg);
-  mapReg.on('click',function(e){
-    gpsReg={lat:e.latlng.lat,lng:e.latlng.lng};
-    if(mapRegMarker)mapReg.removeLayer(mapRegMarker);
-    mapRegMarker=L.marker([gpsReg.lat,gpsReg.lng]).addTo(mapReg);
-    document.getElementById('gpsInfo').textContent=gpsReg.lat.toFixed(4)+', '+gpsReg.lng.toFixed(4);
-    haptic(15);
-  });
-  if(navigator.geolocation)navigator.geolocation.getCurrentPosition(function(p){mapReg.setView([p.coords.latitude,p.coords.longitude],14)},function(){},{timeout:5000});
-}
+function initMapReg(){/* Plus de carte interactive — tout est automatique */}
 
-/* ============================================================
-   LOGIN PHARMACIE — avec vérification statut
-   ============================================================ */
+/* LOGIN avec vérification statut */
 async function doLogin(){
   var tel=document.getElementById('lTel').value.trim();
   var pass=document.getElementById('lPass').value;
   if(!tel||!pass){toast('Remplissez tous les champs','err');return}
-
   var email=tel.replace(/[^0-9]/g,'')+'@pharmacie.local';
   var r=await sb.auth.signInWithPassword({email:email,password:pass});
   if(r.error){toast('Identifiants incorrects','err');haptic(30);return}
-
   var p=await sb.from('pharmacies').select('*').eq('id',r.data.user.id).single();
   if(p.error||!p.data){toast('Profil introuvable','err');return}
-
-  // 🔒 VÉRIFICATION DU STATUT
-  if(p.data.statut==='en_attente'||!p.data.statut){
-    await sb.auth.signOut();
-    showPendingModal(p.data,'en_attente');
-    return;
-  }
-  if(p.data.statut==='refuse'){
-    await sb.auth.signOut();
-    showPendingModal(p.data,'refuse');
-    return;
-  }
-
-  // ✅ VALIDÉE → connexion normale
-  session=p.data;
-  haptic(20);
+  if(p.data.statut==='en_attente'||!p.data.statut){await sb.auth.signOut();showPendingModal(p.data,'en_attente');return}
+  if(p.data.statut==='refuse'){await sb.auth.signOut();showPendingModal(p.data,'refuse');return}
+  session=p.data;haptic(20);
   go('pharma');
   toast('Bienvenue '+session.nom,'ok');
   loadLivePharmacies();
 }
 
 function showPendingModal(ph,type){
-  var isPending = type==='en_attente';
+  var isPending=type==='en_attente';
   document.getElementById('modalContent').innerHTML=
     '<div class="pending-state '+(isPending?'pending':'refused')+'">'+
       '<div class="icon-circle">'+(isPending?'⏳':'✕')+'</div>'+
       '<h3>'+(isPending?'Compte en attente de validation':'Demande refusée')+'</h3>'+
-      '<p>'+(isPending?
-        'Votre demande est en cours de vérification par notre équipe. Délai habituel : <b>24 à 48h</b>.'
-        :'Votre licence n\'a pas pu être vérifiée. Contactez notre équipe pour plus d\'informations.')+
-      '</p>'+
-      '<div class="recap">'+
-        '<b>📋 Votre demande</b><br>'+
-        'Pharmacie : <b>'+escapeHtml(ph.nom||'—')+'</b><br>'+
-        'Licence : <b>'+escapeHtml(ph.licence||'—')+'</b><br>'+
-        'Téléphone : <b>'+escapeHtml(ph.tel||'—')+'</b>'+
-      '</div>'+
+      '<p>'+(isPending?'Votre demande est en cours de vérification par notre équipe. Délai habituel : <b>24 à 48h</b>.':'Votre licence n\'a pas pu être vérifiée. Contactez notre équipe.')+'</p>'+
+      '<div class="recap"><b>📋 Votre demande</b><br>Pharmacie : <b>'+escapeHtml(ph.nom||'—')+'</b><br>Licence : <b>'+escapeHtml(ph.licence||'—')+'</b><br>Téléphone : <b>'+escapeHtml(ph.tel||'—')+'</b></div>'+
       '<p style="font-size:12.5px;margin-top:12px">Support : <b>support@mapharmacie.app</b></p>'+
       '<button class="btn" style="margin-top:16px" onclick="closeModal()">Fermer</button>'+
     '</div>';
   document.getElementById('modalBg').classList.add('on');
 }
 
-/* ============================================================
-   REGISTER PHARMACIE — avec statut en_attente
-   ============================================================ */
+/* REGISTER avec statut en_attente */
 async function doRegister(){
   var nom=document.getElementById('rNom').value.trim();
   var licence=document.getElementById('rLicence').value.trim();
@@ -1063,55 +1133,32 @@ async function doRegister(){
   var addr=document.getElementById('rAddr').value.trim();
   var certif=document.getElementById('rCertif').checked;
 
-  // Validations strictes
-  if(!nom||!licence||!pharmacien||!tel||!pass||!addr){
-    toast('Remplissez tous les champs obligatoires','err');return;
-  }
+  if(!nom||!licence||!pharmacien||!tel||!pass||!addr){toast('Remplissez tous les champs obligatoires','err');return}
   if(pass.length<6){toast('Mot de passe : 6 caractères min','err');return}
-  if(!gpsReg){toast('Cliquez sur la carte pour votre position','err');return}
+  if(!gpsReg){toast('Sélectionnez votre pharmacie dans la liste','err');return}
   if(!certif){toast('Vous devez certifier être un pharmacien agréé','err');return}
-  if(licence.length<8||!/[-]/.test(licence)){toast('Numéro de licence invalide (ex: SEN-PH-2024-0123)','err');return}
+  if(licence.length<8||!/[-]/.test(licence)){toast('Numéro de licence invalide','err');return}
 
   haptic(20);
   var email=tel.replace(/[^0-9]/g,'')+'@pharmacie.local';
-
-  // 1. Créer le compte Auth
   var a=await sb.auth.signUp({email:email,password:pass});
   if(a.error){toast(a.error.message,'err');return}
   if(!a.data.user){toast('Compte non créé','err');return}
 
-  // 2. Créer la fiche pharmacie EN ATTENTE
   var ins=await sb.from('pharmacies').insert({
-    id:a.data.user.id,
-    nom:nom,
-    licence:licence,
-    tel:tel,
-    adresse:addr,
-    lat:gpsReg.lat,
-    lng:gpsReg.lng,
-    statut:'en_attente',
-    licence_verifiee:false
+    id:a.data.user.id,nom:nom,licence:licence,tel:tel,adresse:addr,
+    lat:gpsReg.lat,lng:gpsReg.lng,statut:'en_attente',licence_verifiee:false
   });
 
-  if(ins.error){
-    toast('Erreur : '+ins.error.message,'err');
-    return;
-  }
+  if(ins.error){toast('Erreur : '+ins.error.message,'err');return}
 
-  // 3. Message de confirmation
   haptic(30);
   document.getElementById('modalContent').innerHTML=
     '<div class="pending-state pending">'+
       '<div class="icon-circle">⏳</div>'+
       '<h3>Demande envoyée !</h3>'+
       '<p>Votre demande est en cours de vérification.<br>Notre équipe validera votre licence sous <b>24 à 48h</b>.</p>'+
-      '<div class="recap">'+
-        '<b>📋 Récapitulatif</b><br>'+
-        'Pharmacie : <b>'+escapeHtml(nom)+'</b><br>'+
-        'Licence : <b>'+escapeHtml(licence)+'</b><br>'+
-        'Pharmacien : <b>'+escapeHtml(pharmacien)+'</b><br>'+
-        'Téléphone : <b>'+escapeHtml(tel)+'</b>'+
-      '</div>'+
+      '<div class="recap"><b>📋 Récapitulatif</b><br>Pharmacie : <b>'+escapeHtml(nom)+'</b><br>Licence : <b>'+escapeHtml(licence)+'</b><br>Pharmacien : <b>'+escapeHtml(pharmacien)+'</b><br>Téléphone : <b>'+escapeHtml(tel)+'</b></div>'+
       '<p style="font-size:12.5px">Une fois validée, vous pourrez vous connecter avec ce numéro.</p>'+
       '<button class="btn" style="margin-top:16px" onclick="closeModal();document.getElementById(\'tabLogin\').click()">Retour à la connexion</button>'+
     '</div>';
@@ -1125,9 +1172,7 @@ async function logout(){
   toast('Déconnecté','ok');
 }
 
-/* ============================================================
-   DASHBOARD PHARMACIE
-   ============================================================ */
+/* DASHBOARD */
 function dashTab(t){
   document.querySelectorAll('#s-dash .tab').forEach(function(x){x.classList.remove('on')});
   var map={dash:'tDash',add:'tAdd',ord:'tOrd',stats:'tStats'};
@@ -1141,7 +1186,6 @@ async function loadDashboard(tab){
   document.getElementById('dAddr').textContent=session.adresse;
   var el=document.getElementById('dashContent');
 
-  /* STOCK */
   if(tab==='dash'){
     el.innerHTML='<div class="card"><div class="skel skel-line lg"></div></div>';
     var r=await sb.from('stocks').select('*').eq('pharmacie_id',session.id).order('nom');
@@ -1162,8 +1206,6 @@ async function loadDashboard(tab){
     }).join('');
     el.innerHTML=html;
   }
-
-  /* AJOUTER */
   else if(tab==='add'){
     el.innerHTML =
       '<div class="card"><h3>'+ico('file')+'Importer depuis Excel</h3>'+
@@ -1194,8 +1236,6 @@ async function loadDashboard(tab){
       }
     },100);
   }
-
-  /* COMMANDES */
   else if(tab==='ord'){
     el.innerHTML='<div class="card"><div class="skel skel-line lg"></div></div>';
     var r=await sb.from('commandes').select('*').eq('pharmacie_id',session.id).order('created_at',{ascending:false});
@@ -1209,8 +1249,6 @@ async function loadDashboard(tab){
       return '<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:10px"><b>'+o.code+'</b><span class="statut-badge">'+st.replace('_',' ')+'</span></div><div style="font-size:14px;margin-bottom:5px;font-weight:700">'+escapeHtml(o.medicament)+'</div><div style="font-size:12.5px;color:var(--c-60);margin-bottom:10px">📞 '+escapeHtml(o.patient_tel)+'</div>'+(o.ordonnance_url?'<div style="margin-bottom:10px"><a href="'+o.ordonnance_url+'" target="_blank" style="display:inline-block;padding:8px 12px;background:var(--c-08);color:var(--c);border-radius:var(--r-sm);text-decoration:none;font-size:12px;font-weight:700">Voir ordonnance</a></div>':'')+'<div style="display:flex;justify-content:space-between;font-weight:800;color:var(--c);margin-bottom:12px"><span>Total</span><span>'+o.total+' FCFA</span></div>'+(st==='en_attente'?'<div style="display:flex;gap:8px"><button class="btn sm" style="flex:1;margin:0" onclick="setStatut('+o.id+',\'acceptee\')">'+ico('check','sm')+'Accepter</button><button class="btn outline sm" style="flex:1;margin:0" onclick="setStatut('+o.id+',\'refusee\')">'+ico('close','sm')+'Refuser</button></div>':'')+'<button class="btn outline sm" style="margin-top:8px" onclick="openChat('+o.id+',\''+session.id+'\',\''+o.code+'\')">'+ico('message','sm')+'Discuter</button></div>';
     }).join('');
   }
-
-  /* ANALYTICS */
   else if(tab==='stats'){
     el.innerHTML='<div class="card"><div class="skel skel-line lg"></div></div>';
     var r=await sb.from('commandes').select('*').eq('pharmacie_id',session.id).order('created_at',{ascending:false});
@@ -1234,7 +1272,6 @@ async function loadDashboard(tab){
   }
 }
 
-/* SAVE STOCK */
 async function saveStock(){
   var nom=document.getElementById('aNom').value.trim();
   var dci=document.getElementById('aDci').value.trim();
@@ -1257,9 +1294,7 @@ async function editStock(id,prix,qte){
 }
 async function setStatut(id,statut){haptic(15);await sb.from('commandes').update({statut:statut}).eq('id',id);toast('Statut '+statut,'ok');loadDashboard('ord')}
 
-/* ============================================================
-   IMPORT EXCEL
-   ============================================================ */
+/* IMPORT EXCEL */
 function detectColumnType(headerName){
   var h=normalize(headerName);
   if(h.match(/^(nom|name|medicament|médicament|produit|product|libelle|libellé|designation|désignation)/))return'nom';
@@ -1423,14 +1458,11 @@ window.addEventListener('DOMContentLoaded',async function(){
   if(s.data&&s.data.session){
     var p=await sb.from('pharmacies').select('*').eq('id',s.data.session.user.id).single();
     if(p.data&&p.data.statut==='valide')session=p.data;
-    else if(p.data){
-      // Session expirée mais compte pas validé → déconnexion
-      await sb.auth.signOut();
-    }
+    else if(p.data){await sb.auth.signOut()}
   }
   updatePharmaBtn();
   setTimeout(function(){if(navigator.geolocation)startWatchPosition()},500);
 });
 </script>
 </body>
-  </html>
+                                              </html>
